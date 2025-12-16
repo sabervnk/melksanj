@@ -1,7 +1,8 @@
 // Formats a number to string with commas (e.g., 1000000 -> 1,000,000)
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number, lang: 'fa' | 'en' = 'fa'): string => {
   if (isNaN(value)) return '0';
-  return new Intl.NumberFormat('fa-IR').format(value);
+  const locale = lang === 'fa' ? 'fa-IR' : 'en-US';
+  return new Intl.NumberFormat(locale).format(value);
 };
 
 // Parses a string with commas back to a number (e.g., "1,000,000" -> 1000000)

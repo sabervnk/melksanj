@@ -1,55 +1,76 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import CurrencyInput from './CurrencyInput';
-import { calculateTotalRahnValue, formatCurrency, rahnToRent, rentToRahn } from '../utils/currency';
+import { calculateTotalRahnValue, formatCurrency } from '../utils/currency';
 import { ArrowLeftRight, TrendingUp } from 'lucide-react';
+import { useApp } from '../utils/context';
 
 const RenewalCalculator: React.FC = () => {
-  // Current Contract State
-  const [curMortgage, setCurMortgage] = useState<number>(200000000);
-  const [curRent, setCurRent] = useState<number>(3000000);
+  const { t, lang } = useApp();
+
+  // Current Contract State (Empty initially)
+  const [curMortgage, setCurMortgage] = useState<number | ''>('');
+  const [curRent, setCurRent] = useState<number | ''>('');
 
   // New Contract State
-  const [newMortgage, setNewMortgage] = useState<number>(0);
-  const [newRent, setNewRent] = useState<number>(0);
-  const [increasePercent, setIncreasePercent] = useState<number>(20);
+  const [newMortgage, setNewMortgage] = useState<number | ''>('');
+  const [newRent, setNewRent] = useState<number | ''>('');
+  const [increasePercent, setIncreasePercent] = useState<number | ''>('');
 
-  // Helper: Round to nearest 1000 to avoid decimals and weird numbers
+  // Helper: Round to nearest 1000
   const roundVal = (val: number) => Math.round(val / 1000) * 1000;
 
-  // Initialize new values based on default percent
-  useEffect(() => {
-    // Only run this once on mount to set initial values
-    if (newMortgage === 0 && newRent === 0) {
-        const factor = 1 + increasePercent / 100;
-        setNewMortgage(roundVal(curMortgage * factor));
-        setNewRent(roundVal(curRent * factor));
+  // When Percent changes -> Update New Mortgage & Rent
+  // BUT only if percent is NOT empty
+  const handlePercentChange = (valStr: string) => {
+    if (valStr === '') {
+        setIncreasePercent('');
+        setNewMortgage('');
+        setNewRent('');
+        return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // When Percent changes -> Update New Mortgage & Rent (Proportional Scale)
-  const handlePercentChange = (val: number) => {
+    const val = Number(valStr);
     setIncreasePercent(val);
+
+    const cM = typeof curMortgage === 'number' ? curMortgage : 0;
+    const cR = typeof curRent === 'number' ? curRent : 0;
+
     const factor = 1 + val / 100;
-    setNewMortgage(roundVal(curMortgage * factor));
-    setNewRent(roundVal(curRent * factor));
+    setNewMortgage(roundVal(cM * factor));
+    setNewRent(roundVal(cR * factor));
   };
 
+  // If Current values change, and we have a percent, update new values
+  useEffect(() => {
+    if (increasePercent !== '') {
+        const cM = typeof curMortgage === 'number' ? curMortgage : 0;
+        const cR = typeof curRent === 'number' ? curRent : 0;
+        const factor = 1 + (increasePercent as number) / 100;
+        setNewMortgage(roundVal(cM * factor));
+        setNewRent(roundVal(cR * factor));
+    }
+  }, [curMortgage, curRent]); // Removed increasePercent from dep to avoid loop, handled in change handler
+
   // When New Mortgage changes -> Update Percent
-  const handleNewMortgageChange = (val: number) => {
+  const handleNewMortgageChange = (val: number | '') => {
     setNewMortgage(val);
-    updatePercentFromValues(val, newRent);
+    if (val === '') return;
+    updatePercentFromValues(val, typeof newRent === 'number' ? newRent : 0);
   };
 
   // When New Rent changes -> Update Percent
-  const handleNewRentChange = (val: number) => {
+  const handleNewRentChange = (val: number | '') => {
     setNewRent(val);
-    updatePercentFromValues(newMortgage, val);
+    if (val === '') return;
+    updatePercentFromValues(typeof newMortgage === 'number' ? newMortgage : 0, val);
   };
 
   // Logic to calculate percent based on Total Value comparison
   const updatePercentFromValues = (nM: number, nR: number) => {
-    const curTotal = calculateTotalRahnValue(curMortgage, curRent);
+    const cM = typeof curMortgage === 'number' ? curMortgage : 0;
+    const cR = typeof curRent === 'number' ? curRent : 0;
+    
+    const curTotal = calculateTotalRahnValue(cM, cR);
     const newTotal = calculateTotalRahnValue(nM, nR);
     
     if (curTotal === 0) return;
@@ -57,115 +78,139 @@ const RenewalCalculator: React.FC = () => {
     const diff = newTotal - curTotal;
     const percent = (diff / curTotal) * 100;
     
-    // Update percent state without triggering the reverse effect (since we control flow via handlers)
-    // We round percent to 1 decimal place for cleaner look, or integer if user prefers
     setIncreasePercent(parseFloat(percent.toFixed(1)));
   };
 
   // Derived Total Values for display
-  const curTotalValue = calculateTotalRahnValue(curMortgage, curRent);
-  const newTotalValue = calculateTotalRahnValue(newMortgage, newRent);
+  const curTotalValue = calculateTotalRahnValue(
+    typeof curMortgage === 'number' ? curMortgage : 0, 
+    typeof curRent === 'number' ? curRent : 0
+  );
+  
+  const newTotalValue = calculateTotalRahnValue(
+    typeof newMortgage === 'number' ? newMortgage : 0, 
+    typeof newRent === 'number' ? newRent : 0
+  );
+
+  // Helper for Diff display
+  const getDiff = (newVal: number | '', oldVal: number | '') => {
+     const n = typeof newVal === 'number' ? newVal : 0;
+     const o = typeof oldVal === 'number' ? oldVal : 0;
+     return n - o;
+  };
+
+  const diffMortgage = getDiff(newMortgage, curMortgage);
+  const diffRent = getDiff(newRent, curRent);
+
+  // Show results only if percent is entered (not empty string)
+  const showResults = increasePercent !== '';
 
   return (
     <div className="space-y-8 animate-fade-in">
-       <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex items-start gap-3">
-        <TrendingUp className="w-6 h-6 text-emerald-600 mt-1 flex-shrink-0" />
+       <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 flex items-start gap-3">
+        <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mt-1 flex-shrink-0" />
         <div>
-          <h3 className="font-bold text-emerald-800 text-lg mb-1">محاسبه افزایش و تمدید</h3>
-          <p className="text-emerald-600 text-sm leading-relaxed">
-            با تغییر درصد افزایش، مبالغ جدید به نسبت وضعیت فعلی رشد می‌کنند. همچنین می‌توانید مبالغ جدید را دستی تغییر دهید تا درصد افزایش محاسبه شود.
+          <h3 className="font-bold text-emerald-800 dark:text-emerald-300 text-lg mb-1">{t.renewalTitle}</h3>
+          <p className="text-emerald-600 dark:text-emerald-400 text-sm leading-relaxed">
+            {t.renewalDesc}
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column: Current Status */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <h4 className="font-bold text-slate-700 border-b pb-2 mb-4">وضعیت فعلی (سال گذشته)</h4>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+          <h4 className="font-bold text-slate-700 dark:text-slate-200 border-b dark:border-slate-700 pb-2 mb-4">{t.currentStatus}</h4>
           <CurrencyInput
-            label="مبلغ رهن فعلی"
+            label={t.currentMortgage}
             value={curMortgage}
-            onChange={(v) => {
-                setCurMortgage(v);
-                // Optionally update new values immediately to maintain percent? 
-                // Let's just let the user adjust.
-            }}
+            onChange={setCurMortgage}
           />
           <CurrencyInput
-            label="مبلغ اجاره فعلی"
+            label={t.currentRent}
             value={curRent}
             onChange={setCurRent}
           />
           
-          <div className="mt-6 p-4 bg-slate-50 rounded-xl">
-             <div className="text-sm text-slate-500 mb-1">ارزش کل رهن (تبدیل شده):</div>
-             <div className="text-xl font-mono font-bold text-slate-700">{formatCurrency(Math.round(curTotalValue))} <span className="text-sm font-sans font-normal">تومان</span></div>
+          <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl">
+             <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t.totalValueLabel}</div>
+             <div className="text-xl font-mono font-bold text-slate-700 dark:text-slate-200">{formatCurrency(Math.round(curTotalValue), lang)} <span className="text-sm font-sans font-normal">{t.currency}</span></div>
           </div>
         </div>
 
         {/* Right Column: New Contract */}
-        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
+        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-6 rounded-2xl border border-blue-100 dark:border-blue-900 shadow-sm space-y-6 relative overflow-hidden transition-all duration-300">
+          <div className="absolute top-0 left-0 w-2 h-full bg-blue-500 dark:bg-blue-600"></div>
           
-          <div className="flex justify-between items-center border-b border-blue-200 pb-2">
-            <h4 className="font-bold text-blue-900">قرارداد جدید</h4>
-            <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-lg border border-blue-200 shadow-sm">
-                <span className="text-xs text-blue-800">درصد افزایش:</span>
+          <div className="flex justify-between items-center border-b border-blue-200 dark:border-blue-800 pb-2">
+            <h4 className="font-bold text-blue-900 dark:text-blue-100">{t.newContract}</h4>
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg border border-blue-200 dark:border-slate-700 shadow-sm">
+                <span className="text-xs text-blue-800 dark:text-blue-200">{t.increasePercent}</span>
                 <input 
                     type="number" 
+                    placeholder="-"
                     value={increasePercent}
-                    onChange={(e) => handlePercentChange(Number(e.target.value))}
-                    className="w-16 text-center font-bold text-blue-600 outline-none border-b border-dashed border-blue-300 focus:border-blue-500 bg-transparent"
+                    onChange={(e) => handlePercentChange(e.target.value)}
+                    className="w-16 text-center font-bold text-blue-600 dark:text-blue-400 outline-none border-b border-dashed border-blue-300 dark:border-blue-700 focus:border-blue-500 bg-transparent placeholder-slate-300"
                     dir="ltr"
                 />
-                <span className="text-xs text-blue-800">%</span>
+                <span className="text-xs text-blue-800 dark:text-blue-200">%</span>
             </div>
           </div>
 
-          <div className="p-3 bg-blue-100 rounded-lg text-center">
-             <div className="text-xs text-blue-800 mb-1">ارزش کل جدید:</div>
-             <div className="text-xl font-mono font-bold text-blue-900">{formatCurrency(Math.round(newTotalValue))} <span className="text-sm font-sans font-normal">تومان</span></div>
-          </div>
-
-          <div className="space-y-6 relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:block opacity-20">
-                <ArrowLeftRight className="w-12 h-12 text-blue-900" />
+          <div className={`transition-opacity duration-300 ${showResults ? 'opacity-100' : 'opacity-30 grayscale blur-[1px]'}`}>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-center mb-6">
+                <div className="text-xs text-blue-800 dark:text-blue-200 mb-1">{t.newTotalValue}</div>
+                <div className="text-xl font-mono font-bold text-blue-900 dark:text-blue-100">
+                    {showResults ? formatCurrency(Math.round(newTotalValue), lang) : '---'} 
+                    <span className="text-sm font-sans font-normal"> {t.currency}</span>
+                </div>
             </div>
 
-            <div className="bg-white p-2 rounded-lg shadow-sm ring-1 ring-blue-100">
-                <CurrencyInput
-                    label="رهن جدید"
-                    value={newMortgage}
-                    onChange={handleNewMortgageChange}
-                />
-            </div>
-            
-            <div className="bg-white p-2 rounded-lg shadow-sm ring-1 ring-blue-100">
-                <CurrencyInput
-                    label="اجاره جدید"
-                    value={newRent}
-                    onChange={handleNewRentChange}
-                />
+            <div className="space-y-6 relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:block opacity-20">
+                    <ArrowLeftRight className="w-12 h-12 text-blue-900 dark:text-blue-200" />
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm ring-1 ring-blue-100 dark:ring-blue-900">
+                    <CurrencyInput
+                        label={t.newMortgage}
+                        value={newMortgage}
+                        onChange={handleNewMortgageChange}
+                        disabled={!showResults}
+                    />
+                </div>
+                
+                <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm ring-1 ring-blue-100 dark:ring-blue-900">
+                    <CurrencyInput
+                        label={t.newRent}
+                        value={newRent}
+                        onChange={handleNewRentChange}
+                        disabled={!showResults}
+                    />
+                </div>
             </div>
           </div>
         </div>
       </div>
       
       {/* Quick Diff Info */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-         <div className="bg-white p-3 rounded-xl border text-center">
-            <div className="text-xs text-slate-400">تفاوت رهن</div>
-            <div className={`font-mono font-bold text-lg ${newMortgage - curMortgage >= 0 ? 'text-green-600' : 'text-red-600'}`} dir="ltr">
-                {newMortgage - curMortgage > 0 ? '+' : ''}{formatCurrency(newMortgage - curMortgage)}
+      {showResults && (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 animate-fade-in">
+         <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
+            <div className="text-xs text-slate-400 dark:text-slate-500">{t.diffMortgage}</div>
+            <div className={`font-mono font-bold text-lg ${diffMortgage >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} dir="ltr">
+                {diffMortgage > 0 ? '+' : ''}{formatCurrency(diffMortgage, lang)}
             </div>
          </div>
-         <div className="bg-white p-3 rounded-xl border text-center">
-            <div className="text-xs text-slate-400">تفاوت اجاره</div>
-             <div className={`font-mono font-bold text-lg ${newRent - curRent >= 0 ? 'text-green-600' : 'text-red-600'}`} dir="ltr">
-                {newRent - curRent > 0 ? '+' : ''}{formatCurrency(newRent - curRent)}
+         <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 text-center">
+            <div className="text-xs text-slate-400 dark:text-slate-500">{t.diffRent}</div>
+             <div className={`font-mono font-bold text-lg ${diffRent >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} dir="ltr">
+                {diffRent > 0 ? '+' : ''}{formatCurrency(diffRent, lang)}
             </div>
          </div>
       </div>
+      )}
     </div>
   );
 };

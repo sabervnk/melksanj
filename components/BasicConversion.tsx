@@ -1,42 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import CurrencyInput from './CurrencyInput';
-import { calculateTotalRahnValue, formatCurrency, rahnToRent, RAHN_UNIT } from '../utils/currency';
+import { calculateTotalRahnValue, formatCurrency, rahnToRent, rentToRahn, RAHN_UNIT } from '../utils/currency';
 import { Calculator } from 'lucide-react';
+import { useApp } from '../utils/context';
 
 const BasicConversion: React.FC = () => {
-  // State: We keep track of the "Full Rahn Value" (Total Value) and the "Selected Rahn"
-  const [totalValue, setTotalValue] = useState<number>(1000000000); // Default 1 Billion
-  const [mortgagePart, setMortgagePart] = useState<number>(500000000); // Default 500 Million
+  const { t, lang } = useApp();
+
+  // Initialize as empty string to show placeholder
+  const [totalValue, setTotalValue] = useState<number | ''>(''); 
+  const [mortgagePart, setMortgagePart] = useState<number | ''>('');
   const [rentPart, setRentPart] = useState<number>(0);
 
   // When Total Value or Mortgage Part changes, recalculate Rent
   useEffect(() => {
+    const total = typeof totalValue === 'number' ? totalValue : 0;
+    const mortgage = typeof mortgagePart === 'number' ? mortgagePart : 0;
+
+    // If inputs are empty, result is 0
+    if (total === 0) {
+        setRentPart(0);
+        return;
+    }
+
     // Ensure mortgage part doesn't exceed total value
-    if (mortgagePart > totalValue) {
-      setMortgagePart(totalValue);
+    if (mortgage > total) {
+      setMortgagePart(total);
       setRentPart(0);
     } else {
-      const remainingForRent = totalValue - mortgagePart;
+      const remainingForRent = total - mortgage;
       setRentPart(rahnToRent(remainingForRent));
     }
   }, [totalValue, mortgagePart]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Slider returns percentage (0-100) or direct step value
-    // Let's use steps of 1 Million for smoother UX on slider
+    // If total value is not set, slider shouldn't really do anything effective or should default to 0
+    if (typeof totalValue !== 'number') return;
+    
     const val = Number(e.target.value);
     setMortgagePart(val);
   };
 
+  const handleRentChange = (val: number | '') => {
+    if (typeof totalValue !== 'number') return;
+
+    if (val === '') {
+        // If rent is cleared, it implies full mortgage usually, or just wait for input
+        // Let's set mortgage to total (0 rent)
+        setMortgagePart(totalValue);
+        return;
+    }
+
+    const rentVal = val;
+    // Calculate how much Rahn is consumed by this rent
+    const rahnUsed = rentToRahn(rentVal);
+    
+    // Mortgage is the remaining part
+    let newMortgage = totalValue - rahnUsed;
+    
+    // Clamp values
+    if (newMortgage < 0) newMortgage = 0;
+    if (newMortgage > totalValue) newMortgage = totalValue;
+
+    setMortgagePart(newMortgage);
+  };
+
+  // Helper values for rendering
+  const safeTotalValue = typeof totalValue === 'number' ? totalValue : 0;
+  const safeMortgagePart = typeof mortgagePart === 'number' ? mortgagePart : 0;
+  
+  const footerNote = t.basicFooterNote.replace('{amount}', formatCurrency(safeTotalValue - safeMortgagePart, lang));
+
   return (
     <div className="space-y-8 animate-fade-in">
-      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-        <Calculator className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800 flex items-start gap-3">
+        <Calculator className="w-6 h-6 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
         <div>
-          <h3 className="font-bold text-blue-800 text-lg mb-1">تبدیل رهن کامل به ترکیبی</h3>
-          <p className="text-blue-600 text-sm leading-relaxed">
-            مبلغ «رهن کامل» ملک را وارد کنید. سپس با تغییر نوار لغزنده، نسبت رهن و اجاره را تعیین کنید.
-            مبنای محاسبه: هر ۱ میلیون تومان رهن = ۳۰ هزار تومان اجاره.
+          <h3 className="font-bold text-blue-800 dark:text-blue-300 text-lg mb-1">{t.basicTitle}</h3>
+          <p className="text-blue-600 dark:text-blue-400 text-sm leading-relaxed">
+            {t.basicDesc}
           </p>
         </div>
       </div>
@@ -44,80 +86,72 @@ const BasicConversion: React.FC = () => {
       {/* Input Section */}
       <div className="grid gap-6">
         <CurrencyInput
-          label="ارزش رهن کامل ملک (تومان)"
+          label={t.fullMortgageLabel}
           value={totalValue}
           onChange={(val) => {
             setTotalValue(val);
-            // Reset split to roughly 50% or keep ratio if needed, but keeping current amount valid is safer
-            if (val < mortgagePart) setMortgagePart(val);
+            // If we are setting a new total, ensuring mortgage part isn't higher
+            if (typeof val === 'number' && typeof mortgagePart === 'number' && val < mortgagePart) {
+                setMortgagePart(val);
+            }
           }}
         />
 
-        <div className="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-8">
+        <div className="p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm space-y-8">
           
-          {/* Controls: Slider & Manual Input */}
+          {/* Slider Control */}
           <div className="space-y-4">
-             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-                <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-700">تعیین مبلغ رهن</span>
-                    <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">قابل تنظیم</span>
-                </div>
-                <div className="w-full md:w-1/2">
-                    <CurrencyInput 
-                        label="" 
-                        placeholder="مبلغ رهن را وارد کنید"
-                        value={mortgagePart} 
-                        onChange={setMortgagePart} 
-                        className=""
-                    />
-                </div>
+             <div className="flex justify-between items-center">
+                <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">{t.adjustable}</span>
              </div>
 
             {/* Slider */}
-            <div className="relative pt-4 pb-2">
+            <div className="relative pt-2 pb-2">
                 <input
                 type="range"
                 min={0}
-                max={totalValue}
+                max={safeTotalValue}
                 step={RAHN_UNIT} // 1 Million steps
-                value={mortgagePart}
+                value={safeMortgagePart}
                 onChange={handleSliderChange}
-                className="w-full"
+                disabled={typeof totalValue !== 'number'}
+                className="w-full disabled:opacity-50"
                 />
                 {/* Markers */}
-                <div className="flex justify-between text-xs text-slate-400 mt-2 font-mono">
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-2 font-mono">
                 <span>0</span>
-                <span>{formatCurrency(totalValue / 2)}</span>
-                <span>{formatCurrency(totalValue)}</span>
+                <span>{formatCurrency(safeTotalValue / 2, lang)}</span>
+                <span>{formatCurrency(safeTotalValue, lang)}</span>
                 </div>
             </div>
           </div>
 
-          {/* Results Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-slate-100">
-            <div className="space-y-2">
-              <label className="text-sm text-slate-500">مبلغ رهن نهایی</label>
-              <div className="flex items-center justify-between bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
-                <span className="font-mono font-bold text-2xl text-blue-700">
-                  {formatCurrency(mortgagePart)}
-                </span>
-                <span className="text-sm text-blue-400 font-medium">تومان</span>
-              </div>
+          {/* Inputs Grid (Editable Results) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-700">
+            <div className="relative group">
+              <CurrencyInput 
+                label={t.finalMortgage} 
+                value={mortgagePart} 
+                onChange={setMortgagePart}
+                className="relative z-10"
+              />
+              {/* Optional Visual Indicator */}
+              <div className="absolute inset-0 bg-blue-50 dark:bg-blue-900/10 rounded-xl -m-2 z-0 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm text-slate-500">اجاره ماهیانه</label>
-              <div className="flex items-center justify-between bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm">
-                <span className="font-mono font-bold text-2xl text-emerald-700">
-                  {formatCurrency(rentPart)}
-                </span>
-                <span className="text-sm text-emerald-400 font-medium">تومان</span>
-              </div>
+            <div className="relative group">
+               <CurrencyInput 
+                label={t.monthlyRent} 
+                value={rentPart} 
+                onChange={handleRentChange}
+                className="relative z-10"
+               />
+               <div className="absolute inset-0 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl -m-2 z-0 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
             </div>
             
             <div className="md:col-span-2 text-center pt-2">
-                 <p className="text-xs text-slate-400 leading-5 bg-slate-50 inline-block px-3 py-1 rounded-full">
-                    این مبلغ اجاره معادل سود {formatCurrency(totalValue - mortgagePart)} تومان از پول رهن است.
+                 <p className="text-xs text-slate-400 dark:text-slate-500 leading-5 bg-slate-50 dark:bg-slate-900 inline-block px-3 py-1 rounded-full">
+                    {footerNote}
                   </p>
             </div>
           </div>
