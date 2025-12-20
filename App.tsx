@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import BasicConversion from './components/BasicConversion';
 import RenewalCalculator from './components/RenewalCalculator';
-import { Home, RefreshCw, Moon, Sun, Languages } from 'lucide-react';
+import CommissionCalculator from './components/CommissionCalculator';
+import { Home, RefreshCw, Moon, Sun, Languages, Handshake } from 'lucide-react';
 import { AppProvider, useApp } from './utils/context';
 
 // Content component that uses the context
 const AppContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'basic' | 'renewal'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'renewal' | 'commission'>('basic');
   const { lang, setLang, toggleTheme, theme, t } = useApp();
 
   return (
@@ -61,26 +62,36 @@ const AppContent: React.FC = () => {
       <main className="max-w-3xl mx-auto px-4 mt-8">
         
         {/* Tabs */}
-        <div className="bg-white dark:bg-slate-800 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex mb-8">
+        <div className="bg-white dark:bg-slate-800 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex mb-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('basic')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all duration-200
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg text-[13px] md:text-sm font-bold transition-all duration-200 min-w-fit
               ${activeTab === 'basic' 
                 ? 'bg-blue-600 text-white shadow-md' 
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
           >
             <Home size={18} />
-            {t.tabBasic}
+            <span className="whitespace-nowrap">{t.tabBasic}</span>
           </button>
           <button
             onClick={() => setActiveTab('renewal')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all duration-200
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg text-[13px] md:text-sm font-bold transition-all duration-200 min-w-fit
               ${activeTab === 'renewal' 
                 ? 'bg-emerald-600 text-white shadow-md' 
                 : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
           >
             <RefreshCw size={18} />
-            {t.tabRenewal}
+            <span className="whitespace-nowrap">{t.tabRenewal}</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('commission')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-2 rounded-lg text-[13px] md:text-sm font-bold transition-all duration-200 min-w-fit
+              ${activeTab === 'commission' 
+                ? 'bg-indigo-600 text-white shadow-md' 
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+          >
+            <Handshake size={18} />
+            <span className="whitespace-nowrap">{t.tabCommission}</span>
           </button>
         </div>
 
@@ -92,6 +103,9 @@ const AppContent: React.FC = () => {
           <div className={activeTab === 'renewal' ? 'block' : 'hidden'}>
             <RenewalCalculator />
           </div>
+          <div className={activeTab === 'commission' ? 'block' : 'hidden'}>
+            <CommissionCalculator />
+          </div>
         </div>
 
         {/* Footer info */}
@@ -99,10 +113,10 @@ const AppContent: React.FC = () => {
             <p className="text-sm text-slate-400 dark:text-slate-500">
                 {t.footerBase}
             </p>
-            <p className="text-xs text-slate-300 dark:text-slate-600 mt-2">
+            <p className="text-xs text-slate-300 dark:text-slate-600 mt-2 px-4 leading-relaxed">
                 {t.footerDisclaimer}
             </p>
-            <p className="flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-slate-500 mt-6 font-medium opacity-80" dir="ltr">
+            <p className="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400 mt-8 font-medium">
                 {t.footerLove}
             </p>
         </div>
