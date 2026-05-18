@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CurrencyInput from './CurrencyInput';
-import { calculateTotalRahnValue, formatCurrency } from '../utils/currency';
+import { calculateTotalRahnValue, formatCurrency, rahnToRent, rentToRahn } from '../utils/currency';
 import { ArrowLeftRight, TrendingUp } from 'lucide-react';
 import { useApp } from '../utils/context';
 
@@ -15,12 +15,36 @@ const RenewalCalculator: React.FC = () => {
   const [newMortgage, setNewMortgage] = useState<number | ''>('');
   const [newRent, setNewRent] = useState<number | ''>('');
   const [increasePercent, setIncreasePercent] = useState<number | ''>('');
+  const [increaseMode, setIncreaseMode] = useState<'both' | 'mortgage' | 'rent'>('both');
 
   // Helper: Round to nearest 1000
   const roundVal = (val: number) => Math.round(val / 1000) * 1000;
 
+  // Calculation Logic
+  const calculateNewValues = (percent: number, mode: 'both' | 'mortgage' | 'rent') => {
+    const cM = typeof curMortgage === 'number' ? curMortgage : 0;
+    const cR = typeof curRent === 'number' ? curRent : 0;
+    const factor = 1 + percent / 100;
+
+    if (mode === 'both') {
+      setNewMortgage(roundVal(cM * factor));
+      setNewRent(roundVal(cR * factor));
+    } else if (mode === 'mortgage') {
+      // Formula: (Current Mortgage + Rent-as-Mortgage) * Factor - Rent-as-Mortgage
+      const totalM = cM + rentToRahn(cR);
+      const newTotalM = totalM * factor;
+      setNewMortgage(roundVal(newTotalM - rentToRahn(cR)));
+      setNewRent(cR);
+    } else if (mode === 'rent') {
+      // Formula: (Current Rent + Mortgage-as-Rent) * Factor - Mortgage-as-Rent
+      const totalR = cR + rahnToRent(cM);
+      const newTotalR = totalR * factor;
+      setNewRent(roundVal(newTotalR - rahnToRent(cM)));
+      setNewMortgage(cM);
+    }
+  };
+
   // When Percent changes -> Update New Mortgage & Rent
-  // BUT only if percent is NOT empty
   const handlePercentChange = (valStr: string) => {
     if (valStr === '') {
         setIncreasePercent('');
@@ -31,25 +55,15 @@ const RenewalCalculator: React.FC = () => {
 
     const val = Number(valStr);
     setIncreasePercent(val);
-
-    const cM = typeof curMortgage === 'number' ? curMortgage : 0;
-    const cR = typeof curRent === 'number' ? curRent : 0;
-
-    const factor = 1 + val / 100;
-    setNewMortgage(roundVal(cM * factor));
-    setNewRent(roundVal(cR * factor));
+    calculateNewValues(val, increaseMode);
   };
 
-  // If Current values change, and we have a percent, update new values
+  // If Current values change, or mode changes, and we have a percent, update new values
   useEffect(() => {
     if (increasePercent !== '') {
-        const cM = typeof curMortgage === 'number' ? curMortgage : 0;
-        const cR = typeof curRent === 'number' ? curRent : 0;
-        const factor = 1 + (increasePercent as number) / 100;
-        setNewMortgage(roundVal(cM * factor));
-        setNewRent(roundVal(cR * factor));
+        calculateNewValues(Number(increasePercent), increaseMode);
     }
-  }, [curMortgage, curRent]); // Removed increasePercent from dep to avoid loop, handled in change handler
+  }, [curMortgage, curRent, increaseMode]); 
 
   // When New Mortgage changes -> Update Percent
   const handleNewMortgageChange = (val: number | '') => {
@@ -155,6 +169,44 @@ const RenewalCalculator: React.FC = () => {
                     dir="ltr"
                 />
                 <span className="text-xs text-blue-800 dark:text-blue-200">%</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-blue-800/60 dark:text-blue-200/60 block px-1">
+              {t.increaseTarget}
+            </label>
+            <div className="grid grid-cols-3 gap-1 bg-blue-100/50 dark:bg-slate-900/50 p-1 rounded-lg border border-blue-200 dark:border-slate-700">
+              <button
+                onClick={() => setIncreaseMode('both')}
+                className={`py-1.5 px-2 rounded-md text-[11px] md:text-xs font-bold transition-all ${
+                  increaseMode === 'both'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {t.increaseTargetBoth}
+              </button>
+              <button
+                onClick={() => setIncreaseMode('mortgage')}
+                className={`py-1.5 px-2 rounded-md text-[11px] md:text-xs font-bold transition-all ${
+                  increaseMode === 'mortgage'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {t.increaseTargetMortgage}
+              </button>
+              <button
+                onClick={() => setIncreaseMode('rent')}
+                className={`py-1.5 px-2 rounded-md text-[11px] md:text-xs font-bold transition-all ${
+                  increaseMode === 'rent'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {t.increaseTargetRent}
+              </button>
             </div>
           </div>
 
