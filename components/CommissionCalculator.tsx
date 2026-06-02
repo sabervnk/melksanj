@@ -19,11 +19,13 @@ const CommissionCalculator: React.FC = () => {
   // Results
   const [baseComm, setBaseComm] = useState<number>(0);
   const [tax, setTax] = useState<number>(0);
+  const [taxPortion, setTaxPortion] = useState<number>(0);
+  const [dutyPortion, setDutyPortion] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
 
   useEffect(() => {
     let base = 0;
-    const TAX_RATE = 0.09;
+    const TAX_RATE = 0.10; // Updated to 10% per revised tax laws (7% tax + 3% duties)
     const isManual = typeof customPct === 'number' && customPct > 0;
     const manualFactor = isManual ? (customPct as number) / 100 : 0;
 
@@ -44,8 +46,13 @@ const CommissionCalculator: React.FC = () => {
     }
 
     const calculatedTax = base * TAX_RATE;
+    const calculatedTaxPortion = base * 0.07;
+    const calculatedDutyPortion = base * 0.03;
+
     setBaseComm(base);
     setTax(calculatedTax);
+    setTaxPortion(calculatedTaxPortion);
+    setDutyPortion(calculatedDutyPortion);
     setTotal(base + calculatedTax);
   }, [type, price, rahn, rent, customPct]);
 
@@ -148,6 +155,28 @@ const CommissionCalculator: React.FC = () => {
                 {formatCurrency(Math.round(tax), lang)} {t.currency}
               </span>
            </div>
+           {/* Tax Breakdown */}
+           <div className={`space-y-1.5 mt-1 border-indigo-100 dark:border-indigo-900/45 ${lang === 'fa' ? 'mr-4 pr-3 border-r-2' : 'ml-4 pl-3 border-l-2'}`}>
+             <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 text-xs">
+                <span className="flex items-center gap-1.5 animate-fade-in">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/60" />
+                  {t.taxPortion}
+                </span>
+                <span className="font-mono">
+                  {formatCurrency(Math.round(taxPortion), lang)} {t.currency}
+                </span>
+             </div>
+             <div className="flex justify-between items-center text-slate-500 dark:text-slate-400 text-xs text-start">
+                <span className="flex items-center gap-1.5 animate-fade-in">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/60" />
+                  {t.dutyPortion}
+                </span>
+                <span className="font-mono">
+                  {formatCurrency(Math.round(dutyPortion), lang)} {t.currency}
+                </span>
+             </div>
+           </div>
+
            <div className="pt-4 border-t border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <ReceiptText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
