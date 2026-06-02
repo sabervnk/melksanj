@@ -65,18 +65,42 @@ const RenewalCalculator: React.FC = () => {
     }
   }, [curMortgage, curRent, increaseMode]); 
 
-  // When New Mortgage changes -> Update Percent
+  // When New Mortgage changes -> Update other values keeping the percent constant
   const handleNewMortgageChange = (val: number | '') => {
     setNewMortgage(val);
     if (val === '') return;
-    updatePercentFromValues(val, typeof newRent === 'number' ? newRent : 0);
+
+    if (increasePercent !== '') {
+      const cM = typeof curMortgage === 'number' ? curMortgage : 0;
+      const cR = typeof curRent === 'number' ? curRent : 0;
+      const curTotal = calculateTotalRahnValue(cM, cR);
+      const targetTotal = curTotal * (1 + Number(increasePercent) / 100);
+
+      const remainingRahn = targetTotal - val;
+      const calculatedRent = rahnToRent(remainingRahn < 0 ? 0 : remainingRahn);
+      setNewRent(roundVal(calculatedRent));
+    } else {
+      updatePercentFromValues(val, typeof newRent === 'number' ? newRent : 0);
+    }
   };
 
-  // When New Rent changes -> Update Percent
+  // When New Rent changes -> Update other values keeping the percent constant
   const handleNewRentChange = (val: number | '') => {
     setNewRent(val);
     if (val === '') return;
-    updatePercentFromValues(typeof newMortgage === 'number' ? newMortgage : 0, val);
+
+    if (increasePercent !== '') {
+      const cM = typeof curMortgage === 'number' ? curMortgage : 0;
+      const cR = typeof curRent === 'number' ? curRent : 0;
+      const curTotal = calculateTotalRahnValue(cM, cR);
+      const targetTotal = curTotal * (1 + Number(increasePercent) / 100);
+
+      const rahnFromRent = rentToRahn(val);
+      const calculatedMortgage = targetTotal - rahnFromRent;
+      setNewMortgage(roundVal(calculatedMortgage < 0 ? 0 : calculatedMortgage));
+    } else {
+      updatePercentFromValues(typeof newMortgage === 'number' ? newMortgage : 0, val);
+    }
   };
 
   // Logic to calculate percent based on Total Value comparison
