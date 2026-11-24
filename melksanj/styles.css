@@ -100,8 +100,13 @@ input[type=range]{width:100%;height:24px;margin:0;accent-color:#b8452b;cursor:po
 .notice:empty{display:none}
 .guide{margin-top:18px;padding:15px 20px;border-radius:18px}
 .guide p{font-size:.91rem;color:var(--sub);margin-top:8px}
-.foot{display:flex;justify-content:space-between;gap:12px;align-items:center;padding-block:22px;color:var(--muted);font-size:.8rem}
-.foot b{color:var(--ink)}
+.foot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:center;margin-block-start:24px;padding-block:20px 26px;border-block-start:1px solid var(--edge);color:var(--muted);font-size:.8rem}
+.footInfo b{display:block;color:var(--ink);font-size:.96rem;font-weight:800}
+.footInfo p{margin-block-start:3px}
+.footCredits{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.footCredits a{display:inline-flex;align-items:center;min-height:36px;padding:4px 12px;border:1px solid var(--edge);border-radius:999px;background:var(--paper);font-weight:700;text-decoration:none}
+.footCredits a:hover{background:var(--mint);text-decoration:underline}
+@media(max-width:620px){.foot{grid-template-columns:1fr;align-items:start;margin-block-start:18px;padding-block:16px 22px}}
 .scenarios{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:12px;margin-top:16px}
 .scenario{border:1px solid var(--edge);background:var(--solid);border-radius:15px;padding:14px}
 .scenarioHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
@@ -123,7 +128,7 @@ dialog::backdrop{backdrop-filter:blur(6px);background:#0c192773}
 .shell{width:calc(100% - 24px)}.brand{gap:7px}.brand img{width:38px;height:38px}.brand strong{font-size:1.03rem}.brand small{display:none}.actions{gap:4px}.topAction{min-height:39px;padding:5px 8px}.iconOnly{width:39px}.topAction .actionText{display:none}
 .hero{border-radius:22px;min-height:230px}.heroContent{max-width:79%;padding:19px 16px}.hero::before{width:74%}.hero::after{background:linear-gradient(to left,#202e3e 7%,#202e3ee8 34%,#202e3e91 67%,#20324480),linear-gradient(0deg,#192838ad,transparent 65%)}[dir=ltr] .hero::after{background:linear-gradient(to right,#202e3e 7%,#202e3ee8 34%,#202e3e91 67%,#20324480),linear-gradient(0deg,#192838ad,transparent 65%)}.hero p{font-size:.83rem}
 .nav{gap:3px;padding:4px;border-radius:15px}.nav button{min-height:53px;flex-direction:column;gap:3px;font-size:.73rem;line-height:1.2;padding:4px 2px;border-radius:11px}.nav .icon{width:17px;height:17px}
-.card{padding:15px;border-radius:19px}.cardHead{margin-bottom:13px}.cardHead h2,.resultTitle h2{font-size:1.12rem}.fields{gap:8px}.figure{padding:9px}.foot{flex-wrap:wrap}
+.card{padding:15px;border-radius:19px}.cardHead{margin-bottom:13px}.cardHead h2,.resultTitle h2{font-size:1.12rem}.fields{gap:8px}.figure{padding:9px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
 
@@ -270,5 +275,3 @@ body {font-family:var(--cms-font,Vazirmatn,system-ui,sans-serif)}
 @media(min-width:901px){:root[data-custom-width] .shell{width:min(var(--cms-width),calc(100% - 64px))}}
 :root[data-custom-radius] :is(.card,.nav,.guide,.hero){border-radius:var(--cms-radius)}
 .hero{background:var(--cms-hero,radial-gradient(ellipse at 25% 30%,#455360,#283745 60%,#192b3b));color:var(--cms-hero-text,#f5f8fb)}
-.footCredits{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px}
-.footCredits a{font-weight:700}

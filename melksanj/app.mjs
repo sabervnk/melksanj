@@ -129,7 +129,15 @@ function frame() {
   <p>${t('ارزش معادل رهن از جمع مبلغ رهن و معادل رهنِ اجارهٔ ماهانه به‌دست می‌آید. نرخ پیش‌فرضِ تبدیل ۳۰٬۰۰۰ تومان به‌ازای هر یک میلیون تومان رهن است و می‌توان آن را تغییر داد. مبالغ نهایی به نزدیک‌ترین تومان گرد می‌شوند.', 'Full-deposit equivalent adds the deposit to the deposit value of monthly rent. The editable example conversion rate is 30,000 toman per one million toman of deposit. Final amounts are rounded to the nearest toman.')}</p>
   <p>${t('برای قراردادهای مشمول آیین‌نامه، ارزش معاملاتی موضوع مادهٔ ۶۴، ضریب مصوب و سقف تعرفه را برای شهرستان و نوع قرارداد از مرجع مربوط بگیرید.', 'For contracts covered by the regulation, obtain the Article 64 transactional value, approved coefficient, and applicable cap for the county and contract type.')}</p>
   <p><a href="${lawUrl}" target="_blank" rel="noopener noreferrer">${t('متن آیین‌نامهٔ تعیین تعرفهٔ دلالان معاملات املاک', 'Read the regulation on real-estate brokerage fees')}</a></p></details>`;
-  $('footer').innerHTML = `<b>${t('ملک‌سنج', 'Melksanj')}</b><span>${t('واحد تمام مبالغ تومان است. سوابق در همین مرورگر می‌مانند.', 'All amounts are in toman. History stays in this browser.')}</span><span class="footCredits"><span>${t('با ❤️ برای مردم ایران', 'With ❤️ for the people of Iran')}</span><a href="mailto:saber.alfa@gmail.com">${t('ارتباط با طراح و مالک · صابر', 'Contact the designer and owner · Saber')}</a></span>`;
+  $('footer').innerHTML = `
+    <div class="footInfo">
+      <b>${t('ملک‌سنج', 'Melksanj')}</b>
+      <p>${t('واحد تمام مبالغ تومان است. سوابق در همین مرورگر می‌مانند.', 'All amounts are in toman. History stays in this browser.')}</p>
+    </div>
+    <div class="footCredits">
+      <p>${t('با ❤️ برای مردم ایران', 'With ❤️ for the people of Iran')}</p>
+      <a href="mailto:saber.alfa@gmail.com">${t('طراحی توسط صابر', 'Designed by Saber')}</a>
+    </div>`;
 }
 const depositLabel = () => t('پول پیش (رهن)', 'Deposit');
 const rentLabel = () => t('اجارهٔ ماهانه', 'Monthly rent');

@@ -226,7 +226,9 @@ async function openStudio() {
   const result = await request('content');
   revision = result.revision;
   const content = result.content;
-  draft = { text: content.text ?? {}, theme: { light: content.theme?.light ?? {}, dark: content.theme?.dark ?? {} }, appearance: content.appearance ?? {} };
+  const text = Object.fromEntries(catalog.filter(({ key }) => Object.hasOwn(content.text ?? {}, key))
+    .map(({ key }) => [key, content.text[key]]));
+  draft = { text, theme: { light: content.theme?.light ?? {}, dark: content.theme?.dark ?? {} }, appearance: content.appearance ?? {} };
   dirty = false;
   toggleSession(true);
   render();

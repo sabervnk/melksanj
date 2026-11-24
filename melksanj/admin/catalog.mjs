@@ -216,10 +216,10 @@ export const catalog = [
     "en": "With ❤️ for the people of Iran"
   },
   {
-    "key": "[\"ارتباط با طراح و مالک · صابر\",\"Contact the designer and owner · Saber\"]",
+    "key": "[\"طراحی توسط صابر\",\"Designed by Saber\"]",
     "section": "footer",
-    "fa": "ارتباط با طراح و مالک · صابر",
-    "en": "Contact the designer and owner · Saber"
+    "fa": "طراحی توسط صابر",
+    "en": "Designed by Saber"
   },
   {
     "key": "[\"پول پیش (رهن)\",\"Deposit\"]",
