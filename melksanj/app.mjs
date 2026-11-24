@@ -1,3 +1,4 @@
+import { loadContent, localized, applyTheme } from './content.mjs';
 import { tehranReference, renewalReference, tehranFee, renewalChanges } from './guidance.mjs';
 import { groupedInput, caretAt, separator } from './number-input.mjs';
 import { regulationUrl, countyKey, tariffType, httpsSource, tariffDate, tehranDay, findTariff } from './tariff.mjs';
@@ -11,9 +12,10 @@ const initial = {
   fee: { mode: 'tehran', type: 'sale', value: '', factor: '', vat: '', cap: '', tariffs: {}, county: '', localRates: [], loadedRate: null, quote: 'total', price: '', deposit: '', rent: '', custom: '', rate: '30000', tehran: {} },
   compare: { rate: '30000', months: '12', offers: [{ deposit: '', rent: '', fee: '' }, { deposit: '', rent: '', fee: '' }] }
 };
+const previewMode = window.parent !== window && new URLSearchParams(location.search).has('preview');
 const key = 'melksanj-v1';
 let stored;
-try { stored = JSON.parse(localStorage.getItem(key)); } catch {}
+try { if (!previewMode) stored = JSON.parse(localStorage.getItem(key)); } catch {}
 const state = structuredClone(initial);
 if (stored && typeof stored === 'object') {
   for (const group of ['convert', 'renewal', 'fee', 'compare']) {
@@ -30,11 +32,17 @@ if (!Array.isArray(state.compare.offers) || state.compare.offers.length < 2 || s
 if (!Object.hasOwn(initial, state.tab) || !['convert', 'renewal', 'fee', 'compare'].includes(state.tab)) state.tab = 'convert';
 let storageAvailable = true;
 function persist() {
+  if (previewMode) return;
   try { localStorage.setItem(key, JSON.stringify(state)); storageAvailable = true; }
   catch { storageAvailable = false; }
 }
-const t = (fa, en) => state.lang === 'en' ? en : fa;
-const locale = () => t('fa-IR', 'en-US');
+let content = {};
+const raw = (fa, en) => localized(content, state.lang, fa, en);
+const t = (fa, en) => {
+  const value = raw(fa, en);
+  return value === (state.lang === 'en' ? en : fa) ? value : escape(value);
+};
+const locale = () => state.lang === 'en' ? 'en-US' : 'fa-IR';
 const number = value => new Intl.NumberFormat(locale()).format(value);
 const unit = () => t('تومان', 'toman');
 const amount = value => `${number(value)} ${unit()}`;
@@ -102,10 +110,11 @@ let report = null;
 
 function frame() {
   document.documentElement.lang = state.lang === 'en' ? 'en' : 'fa';
-  document.documentElement.dir = t('rtl', 'ltr');
+  document.documentElement.dir = state.lang === 'en' ? 'ltr' : 'rtl';
   document.documentElement.dataset.theme = state.theme === 'dark' ? 'dark' : 'light';
-  document.title = t('ملک‌سنج | محاسبه‌گر رهن و اجاره', 'Melksanj | Deposit and rent calculator');
-  $('skip').textContent = t('رفتن به محتوای اصلی', 'Skip to content');
+  applyTheme(content);
+  document.title = raw('ملک‌سنج | محاسبه‌گر رهن و اجاره', 'Melksanj | Deposit and rent calculator');
+  $('skip').textContent = raw('رفتن به محتوای اصلی', 'Skip to content');
   $('top').innerHTML = `<a class="brand" href="./" aria-label="${t('ملک‌سنج', 'Melksanj')}"><img src="mark.svg" alt=""><span><strong>${t('ملک‌سنج', 'Melksanj')}</strong><small>${t('محاسبه‌گر املاک', 'Property calculator')}</small></span></a>
   <div class="actions">
   <button class="topAction" data-action="history" aria-label="${t('سوابق محاسبه', 'Saved calculations')}">${icon('history')}<span class="actionText">${t('سوابق', 'History')}</span></button>
@@ -114,13 +123,13 @@ function frame() {
   $('hero').innerHTML = `<div class="heroContent"><span class="heroTag">${icon('calc')}${t('محاسبه‌گر قراردادهای ملکی', 'Property contract calculator')}</span>
   <h1>${t('رهن و اجاره،', 'Deposit and rent,')}<span>${t('با حساب روشن.', 'with clear numbers.')}</span></h1>
   <p>${t('یک کار را از دکمه‌های زیر انتخاب کنید. مبلغ‌ها را وارد کنید و همان لحظه نتیجه را ببینید.', 'Choose what you want to calculate below. The result updates as you enter amounts.')}</p></div>`;
-  $('nav').setAttribute('aria-label', t('محاسبه‌گرها', 'Calculators'));
+  $('nav').setAttribute('aria-label', raw('محاسبه‌گرها', 'Calculators'));
   $('nav').innerHTML = Object.entries(tabs()).map(([id,[label,image]]) => `<button type="button" data-tab="${id}" aria-pressed="${state.tab === id}" aria-controls="workspace">${icon(image)}<span>${label}</span></button>`).join('');
   $('guide').innerHTML = `<details><summary>${t('روش محاسبه و منابع', 'Method and sources')}</summary>
   <p>${t('ارزش معادل رهن از جمع مبلغ رهن و معادل رهنِ اجارهٔ ماهانه به‌دست می‌آید. نرخ پیش‌فرضِ تبدیل ۳۰٬۰۰۰ تومان به‌ازای هر یک میلیون تومان رهن است و می‌توان آن را تغییر داد. مبالغ نهایی به نزدیک‌ترین تومان گرد می‌شوند.', 'Full-deposit equivalent adds the deposit to the deposit value of monthly rent. The editable example conversion rate is 30,000 toman per one million toman of deposit. Final amounts are rounded to the nearest toman.')}</p>
   <p>${t('برای قراردادهای مشمول آیین‌نامه، ارزش معاملاتی موضوع مادهٔ ۶۴، ضریب مصوب و سقف تعرفه را برای شهرستان و نوع قرارداد از مرجع مربوط بگیرید.', 'For contracts covered by the regulation, obtain the Article 64 transactional value, approved coefficient, and applicable cap for the county and contract type.')}</p>
   <p><a href="${lawUrl}" target="_blank" rel="noopener noreferrer">${t('متن آیین‌نامهٔ تعیین تعرفهٔ دلالان معاملات املاک', 'Read the regulation on real-estate brokerage fees')}</a></p></details>`;
-  $('footer').innerHTML = `<b>${t('ملک‌سنج', 'Melksanj')}</b><span>${t('واحد تمام مبالغ تومان است. سوابق در همین مرورگر می‌مانند.', 'All amounts are in toman. History stays in this browser.')}</span>`;
+  $('footer').innerHTML = `<b>${t('ملک‌سنج', 'Melksanj')}</b><span>${t('واحد تمام مبالغ تومان است. سوابق در همین مرورگر می‌مانند.', 'All amounts are in toman. History stays in this browser.')}</span><span class="footCredits"><span>${t('با ❤️ برای مردم ایران', 'With ❤️ for the people of Iran')}</span><a href="mailto:saber.alfa@gmail.com">${t('ارتباط با طراح و مالک · صابر', 'Contact the designer and owner · Saber')}</a></span>`;
 }
 const depositLabel = () => t('پول پیش (رهن)', 'Deposit');
 const rentLabel = () => t('اجارهٔ ماهانه', 'Monthly rent');
@@ -718,7 +727,7 @@ document.addEventListener('click', event => {
   switch (action) {
     case 'language':
     case 'theme': {
-      if (action === 'language') state.lang = t('en','fa');
+      if (action === 'language') state.lang = state.lang === 'en' ? 'fa' : 'en';
       else state.theme = state.theme === 'dark' ? 'light' : 'dark';
       persist();
       const open = Boolean($('rateDetails')?.open);
@@ -844,3 +853,22 @@ function updateCountyInput(input) {
 if (state.fee.loadedRate || (blank(state.fee.factor) && blank(state.fee.cap))) applyTariff();
 frame();
 render();
+
+loadContent().then(settings => {
+  if (!settings || Object.keys(content).length) return;
+  content = settings;
+  frame();
+  render(Boolean($('rateDetails')?.open));
+});
+
+if (previewMode) {
+  addEventListener('message', event => {
+    if (event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'melksanj-preview') return;
+    content = event.data.content ?? {};
+    if (['fa', 'en'].includes(event.data.lang)) state.lang = event.data.lang;
+    if (['light', 'dark'].includes(event.data.theme)) state.theme = event.data.theme;
+    if (Object.hasOwn(views, event.data.tab)) state.tab = event.data.tab;
+    frame();
+    render(Boolean($('rateDetails')?.open));
+  });
+}

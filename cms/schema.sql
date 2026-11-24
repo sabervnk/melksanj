@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS cms_content (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  body TEXT NOT NULL DEFAULT '{}',
+  revision INTEGER NOT NULL DEFAULT 0
+);
+INSERT OR IGNORE INTO cms_content (id) VALUES (1);
+CREATE TABLE IF NOT EXISTS cms_password (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  hash TEXT NOT NULL DEFAULT '',
+  salt TEXT NOT NULL DEFAULT ''
+);
+INSERT OR IGNORE INTO cms_password (id) VALUES (1);
+CREATE TABLE IF NOT EXISTS cms_sessions (
+  token TEXT PRIMARY KEY,
+  expires INTEGER NOT NULL,
+  generation TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cms_attempts (
+  ip TEXT PRIMARY KEY,
+  tries INTEGER NOT NULL,
+  expires INTEGER NOT NULL
+);

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="../mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./admin.css">
+<script type="module" src="./admin.mjs"></script>
+<title>مدیریت ملک‌سنج</title>
+</head>
+<body>
+<header class="header">
+  <a class="identity" href="./"><img src="../mark.svg" alt=""><div><strong id="brand">ملک‌سنج</strong><small id="subtitle">مدیریت سایت</small></div></a>
+  <div class="header-actions"><a id="openSite" href="../" target="_blank" rel="noopener">مشاهده سایت ↗</a><button id="locale" type="button">EN</button><button id="logout" type="button" hidden></button></div>
+</header>
+<main>
+  <section id="gate" class="gate panel" hidden>
+    <h1 id="loginTitle"></h1><p id="loginDescription"></p>
+    <form id="loginForm">
+      <label for="password" id="passwordLabel"></label>
+      <input id="password" name="password" type="password" maxlength="256" required autocomplete="current-password">
+      <button class="primary" id="loginButton"></button>
+    </form>
+  </section>
+  <section id="studio" class="studio" hidden>
+    <aside class="sidebar panel">
+      <h1 id="editorTitle"></h1><nav id="sections" aria-label="بخش‌های مدیریت"></nav>
+    </aside>
+    <section class="workspace panel">
+      <div class="toolbar"><h2 id="sectionTitle"></h2><button class="primary" id="publish"></button></div>
+      <div class="body" id="body"></div>
+    </section>
+    <section class="preview panel">
+      <div class="toolbar"><h2 id="previewTitle"></h2><div class="preview-actions"><button id="previewLang">EN</button><button id="previewTheme"></button></div></div>
+      <iframe id="preview" title="پیش‌نمایش سایت" loading="lazy"></iframe>
+    </section>
+  </section>
+  <div id="status" class="status" role="status" aria-live="polite" hidden></div>
+</main>
+</body>
+</html>

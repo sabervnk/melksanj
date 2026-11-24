@@ -264,3 +264,11 @@ dialog::backdrop{backdrop-filter:blur(6px);background:#0c192773}
   .nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
   .nav button{min-height:45px;flex-direction:row;font-size:.81rem}
 }
+
+/* Published appearance overrides */
+body {font-family:var(--cms-font,Vazirmatn,system-ui,sans-serif)}
+@media(min-width:901px){:root[data-custom-width] .shell{width:min(var(--cms-width),calc(100% - 64px))}}
+:root[data-custom-radius] :is(.card,.nav,.guide,.hero){border-radius:var(--cms-radius)}
+.hero{background:var(--cms-hero,radial-gradient(ellipse at 25% 30%,#455360,#283745 60%,#192b3b));color:var(--cms-hero-text,#f5f8fb)}
+.footCredits{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px}
+.footCredits a{font-weight:700}
