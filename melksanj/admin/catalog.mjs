@@ -1,5 +1,11 @@
 export const catalog = [
   {
+    "key": "[\"بازگشت به بالای صفحه\",\"Back to top\"]",
+    "section": "shared",
+    "fa": "بازگشت به بالای صفحه",
+    "en": "Back to top"
+  },
+  {
     "key": "[\"تومان\",\"toman\"]",
     "section": "shared",
     "fa": "تومان",

@@ -67,6 +67,7 @@ const paths = {
   warning: '<path d="M10.3 4.9 2.5 18a1.8 1.8 0 0 0 1.6 2.7h15.8a1.8 1.8 0 0 0 1.6-2.7L13.7 4.9a2 2 0 0 0-3.4 0ZM12 9v4m0 3h.01"/>',
   input: '<path d="M12 20h9M16.5 3.5l4 4L8 20l-5 1 1-5 12.5-12.5Z"/>',
   arrows: '<path d="M4 8h15m-4-4 4 4-4 4m5 4H5m4-4-4 4 4 4"/>',
+  up: '<path d="M12 19V5m-6 6 6-6 6 6"/>',
   renew: '<path d="M20 9a8 8 0 0 0-14-3L3 9m0-5v5h5m-4 6a8 8 0 0 0 14 3l3-3m-5 0h5v5"/>',
   bill: '<path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3Zm4 5h6m-6 4h6m-6 4h3"/>',
   compare: '<path d="M4 20V9m5 11V4m6 16v-7m5 7V7M2 20h20"/>',
@@ -149,6 +150,11 @@ function frame() {
   <p>${t('یک کار را از دکمه‌های زیر انتخاب کنید. مبلغ‌ها را وارد کنید و همان لحظه نتیجه را ببینید.', 'Choose what you want to calculate below. The result updates as you enter amounts.')}</p></div>`;
   $('nav').setAttribute('aria-label', raw('محاسبه‌گرها', 'Calculators'));
   $('nav').innerHTML = Object.entries(tabs()).map(([id,[label,image]]) => `<button type="button" data-tab="${id}" aria-pressed="${state.tab === id}" aria-controls="workspace">${icon(image)}<span>${label}</span></button>`).join('');
+  const backToTop = $('backToTop');
+  const backLabel = raw('بازگشت به بالای صفحه', 'Back to top');
+  backToTop.setAttribute('aria-label', backLabel);
+  backToTop.title = backLabel;
+  backToTop.innerHTML = icon('up');
   $('guide').innerHTML = `<details><summary>${t('روش محاسبه و منابع', 'Method and sources')}</summary>
   <p>${t('ارزش معادل رهن از جمع مبلغ رهن و معادل رهنِ اجارهٔ ماهانه به‌دست می‌آید. نرخ پیش‌فرضِ تبدیل ۳۰٬۰۰۰ تومان به‌ازای هر یک میلیون تومان رهن است و می‌توان آن را تغییر داد. مبالغ نهایی به نزدیک‌ترین تومان گرد می‌شوند.', 'Full-deposit equivalent adds the deposit to the deposit value of monthly rent. The editable example conversion rate is 30,000 toman per one million toman of deposit. Final amounts are rounded to the nearest toman.')}</p>
   <p>${t('برای قراردادهای مشمول آیین‌نامه، ارزش معاملاتی موضوع مادهٔ ۶۴، ضریب مصوب و سقف تعرفه را برای شهرستان و نوع قرارداد از مرجع مربوط بگیرید.', 'For contracts covered by the regulation, obtain the Article 64 transactional value, approved coefficient, and applicable cap for the county and contract type.')}</p>
@@ -159,7 +165,7 @@ function frame() {
       <p>${t('واحد تمام مبالغ تومان است. سوابق در همین مرورگر می‌مانند.', 'All amounts are in toman. History stays in this browser.')}</p>
     </div>
     <div class="footCredits">
-      <p>${t('با ❤️ برای مردم ایران', 'With ❤️ for the people of Iran')}</p>
+      <p>${t('با ❤️ برای مردم ایران', 'With ❤️ for the people of Iran').replace(/❤\uFE0F?/u, '<span class="footHeart">❤️</span>')}</p>
       <a href="${escape(destination('designer'))}">${t('طراحی توسط صابر', 'Designed by Saber')}</a>
     </div>
     <small class="copyright">${copyright()}</small>`;
@@ -936,6 +942,7 @@ document.addEventListener('click', event => {
     state.tab = button.dataset.tab;
     persist();
     render();
+    if (sectionNav.classList.contains('isDocked')) $('workspace').scrollIntoView({ block:'start' });
     return;
   }
   if (button.dataset.set) {
@@ -1064,6 +1071,32 @@ document.addEventListener('click', event => {
 
 frame();
 render();
+
+const sectionNav = $('nav');
+const navMarker = $('navMarker');
+const backToTop = $('backToTop');
+let navFrame = 0;
+function updateDock() {
+  const pastNav = navMarker.getBoundingClientRect().bottom <= 8;
+  sectionNav.classList.toggle('isDocked', pastNav);
+  backToTop.hidden = !pastNav;
+}
+addEventListener('scroll', () => {
+  if (navFrame) return;
+  navFrame = requestAnimationFrame(() => {
+    navFrame = 0;
+    updateDock();
+  });
+}, { passive:true });
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--nav-clearance', `${sectionNav.offsetHeight + 20}px`);
+  updateDock();
+}).observe(sectionNav);
+updateDock();
+backToTop.addEventListener('click', () => {
+  $('top').querySelector('.brand').focus({ preventScroll:true });
+  window.scrollTo({ top:0, behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+});
 
 loadContent().then(settings => {
   if (!settings || Object.keys(content).length) return;
