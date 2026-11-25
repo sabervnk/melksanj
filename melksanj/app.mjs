@@ -179,11 +179,19 @@ function renderConvert() {
       <div class="sliderBox"><div class="labelLine"><label for="share">${t('چه سهمی را پول پیش بدهید؟', 'How much to pay as a deposit?')}</label><span id="shareText"></span></div><input id="share" type="range" min="0" max="100" step="1" value="${escape(s.share)}" dir="ltr"><div class="rangeEnds" dir="ltr"><span>${t('تمام اجاره', 'All rent')}</span><span>${t('تمام رهن', 'All deposit')}</span></div></div>` : intro(t('چه عددهایی وارد کنم؟','What do I enter?'),t('پول پیش و اجارهٔ پیشنهادی را وارد کنید تا ببینید اگر فقط پول پیش بدهید، مبلغ معادل چقدر است.','Enter the proposed deposit and rent to calculate the equivalent with no monthly rent.'))) +
     `<div class="fields">${field(split ? 'deposit' : 'reverseDeposit',depositLabel(),split ? s.deposit : s.reverseDeposit)}${field(split ? 'rent' : 'reverseRent',rentLabel(),split ? s.rent : s.reverseRent)}</div>` + rateField(s.rate)) + panel();
 }
+function leaseRegistration() {
+  return `<aside class="tariffSources">
+    <span class="sourceEmblem">${icon('bill')}</span>
+    <div><h3>${t('ثبت قرارداد اجاره','Register a lease')}</h3>
+    <p>${t('برای ثبت رایگان قرارداد اجاره و دریافت کد رهگیری، به سامانهٔ خودنویس وزارت راه و شهرسازی بروید.','Use the Ministry of Roads and Urban Development’s Khodnevis portal to register a lease for free and get a tracking code.')}</p>
+    <div class="tariffLinks"><a href="${escape(destination('selfService'))}" target="_blank" rel="noopener noreferrer">${t('ورود به سامانهٔ خودنویس','Open Khodnevis')} ↗</a></div></div>
+  </aside>`;
+}
 function renderRenewal() {
   const s = state.renewal;
   const target = s.mode === 'target';
   return card(t('محاسبهٔ تمدید قرارداد', 'Calculate contract renewal'), t('مبلغ تمدید را از روی درصد پیشنهادی حساب کنید یا ببینید پیشنهاد جدید چند درصد فرق دارد.', 'Calculate renewal from a proposed percentage or see how much the new offer changes the total.'),
-    group('mode',t('روش تمدید','Renewal method'),[['target',t('درصد تغییر را می‌دانم','I know the percentage')],['actual',t('مبلغ‌های جدید را می‌دانم','I know the new amounts')]],s.mode) +
+    leaseRegistration() + group('mode',t('روش تمدید','Renewal method'),[['target',t('درصد تغییر را می‌دانم','I know the percentage')],['actual',t('مبلغ‌های جدید را می‌دانم','I know the new amounts')]],s.mode) +
     `<div class="stack"><div><div class="labelLine"><span>${t('قرارداد فعلی', 'Current contract')}</span>${sample()}</div><div class="fields">${field('deposit',depositLabel(),s.deposit)}${field('rent',rentLabel(),s.rent)}</div></div>
     ${target ? `<div>${field('increase',t('درصد تغییر ارزش کل قرارداد','Change in total contract value'),s.increase,pctOpts())}<p class="help">${t('درصد روی مجموع ارزش پول پیش و اجاره اعمال می‌شود. برای کاهش، درصد منفی مثل ۱۰− وارد کنید.', 'The percentage applies to the combined value of the deposit and rent. Enter a negative percentage, such as −10, for a decrease.')}</p></div>
     <div><span class="label">${t('اعمال تغییر روی','Apply change to')}</span>${group('apply',t('اعمال تغییر روی','Apply change to'),[['both',t('رهن و اجاره','Both')],['deposit',t('فقط رهن','Deposit only')],['rent',t('فقط اجاره','Rent only')]],s.apply)}</div>` :
@@ -225,7 +233,7 @@ function renderFee() {
   return card(t('کمیسیون بنگاه چقدر می‌شود؟','How much is the agent fee?'), t('ببینید هر طرف معامله با احتساب مالیات چقدر می‌پردازد.', 'See what each party would pay including tax.'),
     group('mode',t('روش محاسبهٔ کمیسیون','How to calculate the fee'),[['official',t('با ضریب استعلام‌شده','Use a confirmed coefficient')],['tehran',t('نمونهٔ تهران','Tehran example')],['estimate',t('درصد پیشنهادی بنگاه','Agent’s quote')]],s.mode) +
     group('type',t('نوع معامله','Transaction type'),[['sale',t('خرید و فروش','Sale')],['lease',t('رهن و اجاره','Deposit & rent')],['full',t('رهن کامل','Full deposit')]],s.type) +
-    tariffSources() + (s.mode === 'tehran' ? renderTehranFee(s) : `<div class="stack">${official ?
+    tariffSources() + (s.type === 'sale' ? '' : leaseRegistration()) + (s.mode === 'tehran' ? renderTehranFee(s) : `<div class="stack">${official ?
       `
       ${field('value',t('ارزش معاملاتی ملک','Property transactional value'),s.value,{help:t('مبلغی که ادارهٔ مالیات برای ملک تعیین می‌کند (مادهٔ ۶۴). آن را از مرجع مربوط بگیرید. قیمت توافقی خرید را اینجا وارد نکنید.','The tax authority’s Article 64 value. Obtain it from the relevant authority. Enter it here instead of the agreed sale price.')})}
       <div class="fields">${field('factor',t('درصد مصوب کمیسیون','Approved fee percentage'),s.factor,{...pctOpts(),help:t('ضریب نرخنامه برای مجموع دو طرف را به درصد وارد کنید. اگر ضریب به‌صورت عدد اعشاری اعلام شده، ابتدا آن را در ۱۰۰ ضرب کنید.','Enter the combined coefficient as a percentage. If the tariff gives a decimal multiplier, multiply it by 100.')})}

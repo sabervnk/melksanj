@@ -1792,5 +1792,23 @@ export const catalog = [
     "section": "shared",
     "fa": "نگه‌داشتن نتیجه",
     "en": "Keep result"
+  },
+  {
+    "key": "[\"ثبت قرارداد اجاره\",\"Register a lease\"]",
+    "section": "renewal",
+    "fa": "ثبت قرارداد اجاره",
+    "en": "Register a lease"
+  },
+  {
+    "key": "[\"برای ثبت رایگان قرارداد اجاره و دریافت کد رهگیری، به سامانهٔ خودنویس وزارت راه و شهرسازی بروید.\",\"Use the Ministry of Roads and Urban Development’s Khodnevis portal to register a lease for free and get a tracking code.\"]",
+    "section": "renewal",
+    "fa": "برای ثبت رایگان قرارداد اجاره و دریافت کد رهگیری، به سامانهٔ خودنویس وزارت راه و شهرسازی بروید.",
+    "en": "Use the Ministry of Roads and Urban Development’s Khodnevis portal to register a lease for free and get a tracking code."
+  },
+  {
+    "key": "[\"ورود به سامانهٔ خودنویس\",\"Open Khodnevis\"]",
+    "section": "renewal",
+    "fa": "ورود به سامانهٔ خودنویس",
+    "en": "Open Khodnevis"
   }
 ];
