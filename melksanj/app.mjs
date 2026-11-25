@@ -1,7 +1,8 @@
+import { siteLink } from './site-links.mjs';
 import { loadContent, localized, applyTheme } from './content.mjs';
 import { tehranReference, renewalReference, tehranFee, renewalChanges } from './guidance.mjs';
 import { groupedInput, caretAt, separator } from './number-input.mjs';
-import { regulationUrl, countyKey, tariffType, httpsSource, tariffDate, tehranDay, findTariff } from './tariff.mjs';
+import { countyKey, tariffType, httpsSource, tariffDate, tehranDay, findTariff } from './tariff.mjs';
 import { MILLION, PERCENT, normalize, money, percentage, divide, monthlyFromFull, fullFromMonthly, equivalent, growthPercent, renew, commission, scenario } from './math.mjs';
 
 const $ = id => document.getElementById(id);
@@ -49,7 +50,8 @@ const amount = value => `${number(value)} ${unit()}`;
 const percent = value => `${new Intl.NumberFormat(locale(), { maximumFractionDigits: 4 }).format(Number(value) / 10_000)}٪`.replace('٪', t('٪', '%'));
 const signed = value => `${value > 0n ? '+' : ''}${amount(value)}`;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
-const lawUrl = regulationUrl;
+const destination = id => siteLink(content, id);
+const copyright = () => t('© ملک‌سنج · همهٔ حقوق محفوظ است.', '© Melksanj · All rights reserved.');
 if (!Array.isArray(state.fee.localRates)) state.fee.localRates = [];
 if (!state.fee.tehran || typeof state.fee.tehran !== 'object') state.fee.tehran = {};
 if (state.fee.mode === 'official' && !state.fee.county && !state.fee.value && !state.fee.factor && !state.fee.cap) state.fee.mode = 'tehran';
@@ -67,6 +69,7 @@ const paths = {
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 5V4H4v12h1"/>',
   save: '<path d="M6 4h12v16l-6-4-6 4V4Z"/>',
   close: '<path d="m6 6 12 12m0-12L6 18"/>',
+  download: '<path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>'
 };
 const icon = name => `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">${paths[name]}</svg>`;
@@ -99,11 +102,17 @@ function select(name, label, entries, value) {
 }
 const rateField = value => `<div class="rateLine"><details id="rateDetails"><summary id="rateSummary"></summary>${field('rate', t('اجارهٔ ماهانه به‌ازای هر یک میلیون تومان رهن', 'Monthly rent per one million toman of deposit'), value)}<p class="help">${t('نرخ تبدیل را مطابق توافق یا پیشنهاد وارد کنید.', 'Enter the conversion rate used in your offer or agreement.')}</p></details></div>`;
 const intro = (title, message) => `<div class="inlineGuide"><strong>${title}</strong><p>${message}</p></div>`;
-const step = (isResult, image) => `<div class="step"><span class="tile">${icon(image)}</span><span>${isResult ? t('۲. نتیجه را ببینید','2. See your result') : t('۱. مبلغ‌ها را وارد کنید','1. Enter your amounts')}</span></div>`;
+const step = (isResult, image) => `<div class="step"><span class="tile">${icon(image)}</span><span>${isResult ? t('۳. نتیجه و خروجی','3. Review and export') : t('۲. مبلغ‌ها را وارد کنید','2. Enter your amounts')}</span></div>`;
 const reset = () => btn('reset',t('پاک کردن فرم','Clear form'),'quiet reset', 'renew');
 const warningsPanel = () => '<div id="warnings" class="warnings" aria-live="polite"></div>';
 const card = (title, description, contents, wide = false) => `<article class="card glass ${wide ? 'wide' : ''}"><div class="stageBar">${step(false,'input')}${reset()}</div><div class="cardHead"><div><h2>${title}</h2><p>${description}</p></div></div>${contents}<div id="error" class="notice" role="status"></div><button type="button" class="quiet jumpResult" data-action="jump-result">${icon('calc')}${t('دیدن نتیجه','See result')}</button></article>`;
-const panel = () => `<aside class="card glass result resultStage" aria-labelledby="result-heading"><div class="stageBar">${step(true,'calc')}</div><div class="resultTitle"><h2 id="result-heading" tabindex="-1">${t('نتیجهٔ محاسبه', 'Calculation result')}</h2></div>${warningsPanel()}<div id="result" aria-live="polite"></div><div class="resultActions">${btn('save', t('ذخیره نتیجه', 'Save result'), 'button', 'save')}${btn('copy', t('کپی نتیجه', 'Copy result'), 'quiet', 'copy')}</div></aside>`;
+const resultActions = () => `<div class="resultActions">
+  ${btn('export-png', t('دانلود عکس', 'Download PNG'), 'button', 'download')}
+  ${btn('export-pdf', t('دانلود PDF', 'Download PDF'), 'quiet', 'download')}
+  ${btn('save', t('ذخیره نتیجه', 'Save result'), 'quiet', 'save')}
+  ${btn('copy', t('کپی نتیجه', 'Copy result'), 'quiet', 'copy')}
+</div>`;
+const panel = () => `<aside class="card glass result resultStage" aria-labelledby="result-heading"><div class="stageBar">${step(true,'calc')}</div><div class="resultTitle"><h2 id="result-heading" tabindex="-1">${t('نتیجهٔ محاسبه', 'Calculation result')}</h2></div>${warningsPanel()}<div id="result" aria-live="polite"></div>${resultActions()}</aside>`;
 const metric = (label, value, main = false) => `<div class="${main ? 'resultMain' : 'figure'}"><span class="amountLabel">${label}</span><strong dir="auto">${number(value)}</strong><small>${unit()}</small></div>`;
 const row = (label, text) => `<div class="row"><span>${label}</span><b dir="auto">${text}</b></div>`;
 let report = null;
@@ -114,8 +123,9 @@ function frame() {
   document.documentElement.dataset.theme = state.theme === 'dark' ? 'dark' : 'light';
   applyTheme(content);
   document.title = raw('ملک‌سنج | محاسبه‌گر رهن و اجاره', 'Melksanj | Deposit and rent calculator');
+  delete $('steps').dataset.ready;
   $('skip').textContent = raw('رفتن به محتوای اصلی', 'Skip to content');
-  $('top').innerHTML = `<a class="brand" href="./" aria-label="${t('ملک‌سنج', 'Melksanj')}"><img src="mark.svg" alt=""><span><strong>${t('ملک‌سنج', 'Melksanj')}</strong><small>${t('محاسبه‌گر املاک', 'Property calculator')}</small></span></a>
+  $('top').innerHTML = `<a class="brand" href="${escape(destination('home'))}" aria-label="${t('ملک‌سنج', 'Melksanj')}"><img src="mark.svg" alt=""><span><strong>${t('ملک‌سنج', 'Melksanj')}</strong><small>${t('محاسبه‌گر املاک', 'Property calculator')}</small></span></a>
   <div class="actions">
   <button class="topAction" data-action="history" aria-label="${t('سوابق محاسبه', 'Saved calculations')}">${icon('history')}<span class="actionText">${t('سوابق', 'History')}</span></button>
   <button class="topAction" data-action="language" aria-label="${t('نمایش به انگلیسی','Show in Persian')}">${t('EN', 'فارسی')}</button>
@@ -128,7 +138,7 @@ function frame() {
   $('guide').innerHTML = `<details><summary>${t('روش محاسبه و منابع', 'Method and sources')}</summary>
   <p>${t('ارزش معادل رهن از جمع مبلغ رهن و معادل رهنِ اجارهٔ ماهانه به‌دست می‌آید. نرخ پیش‌فرضِ تبدیل ۳۰٬۰۰۰ تومان به‌ازای هر یک میلیون تومان رهن است و می‌توان آن را تغییر داد. مبالغ نهایی به نزدیک‌ترین تومان گرد می‌شوند.', 'Full-deposit equivalent adds the deposit to the deposit value of monthly rent. The editable example conversion rate is 30,000 toman per one million toman of deposit. Final amounts are rounded to the nearest toman.')}</p>
   <p>${t('برای قراردادهای مشمول آیین‌نامه، ارزش معاملاتی موضوع مادهٔ ۶۴، ضریب مصوب و سقف تعرفه را برای شهرستان و نوع قرارداد از مرجع مربوط بگیرید.', 'For contracts covered by the regulation, obtain the Article 64 transactional value, approved coefficient, and applicable cap for the county and contract type.')}</p>
-  <p><a href="${lawUrl}" target="_blank" rel="noopener noreferrer">${t('متن آیین‌نامهٔ تعیین تعرفهٔ دلالان معاملات املاک', 'Read the regulation on real-estate brokerage fees')}</a></p></details>`;
+  <p><a href="${escape(destination('regulation'))}" target="_blank" rel="noopener noreferrer">${t('متن آیین‌نامهٔ تعیین تعرفهٔ دلالان معاملات املاک', 'Read the regulation on real-estate brokerage fees')}</a></p></details>`;
   $('footer').innerHTML = `
     <div class="footInfo">
       <b>${t('ملک‌سنج', 'Melksanj')}</b>
@@ -136,8 +146,9 @@ function frame() {
     </div>
     <div class="footCredits">
       <p>${t('با ❤️ برای مردم ایران', 'With ❤️ for the people of Iran')}</p>
-      <a href="mailto:saber.alfa@gmail.com">${t('طراحی توسط صابر', 'Designed by Saber')}</a>
-    </div>`;
+      <a href="${escape(destination('designer'))}">${t('طراحی توسط صابر', 'Designed by Saber')}</a>
+    </div>
+    <small class="copyright">${copyright()}</small>`;
 }
 const depositLabel = () => t('پول پیش (رهن)', 'Deposit');
 const rentLabel = () => t('اجارهٔ ماهانه', 'Monthly rent');
@@ -189,7 +200,7 @@ function countyLookup(s) {
     </form><datalist id="counties">${counties.map(name=>`<option value="${escape(name)}"></option>`).join('')}</datalist>
     <div id="tariffStatus" class="fieldNote" role="status"></div>
     <p class="help">${t('این دکمه نرخ قبلیِ همین مرورگر را برمی‌گرداند. برای استعلام، به اتحادیهٔ محل ملک مراجعه کنید.','This button restores rates saved in this browser. Ask your local trade authority for the applicable tariff.')}</p>
-    <a class="sourceLink" href="${lawUrl}" target="_blank" rel="noopener noreferrer">${t('آیین‌نامه و روش تعیین تعرفه','Regulation and tariff method')}</a>
+    <a class="sourceLink" href="${escape(destination('regulation'))}" target="_blank" rel="noopener noreferrer">${t('آیین‌نامه و روش تعیین تعرفه','Regulation and tariff method')}</a>
     </section>`;
 }
 function tariffSaveForm() {
@@ -209,7 +220,7 @@ function feeAmounts(s) {
 }
 function renderTehranFee(s) {
   const offer = s.tehran;
-  const source = `<a href="${tehranReference.source}" target="_blank" rel="noopener noreferrer">${t('منبع نرخنامهٔ تهران · ۱۵ شهریور ۱۴۰۵','Tehran tariff source · 6 September 2026')}</a>`;
+  const source = `<a href="${escape(destination('tehran'))}" target="_blank" rel="noopener noreferrer">${t('منبع نرخنامهٔ تهران · ۱۵ شهریور ۱۴۰۵','Tehran tariff source · 6 September 2026')}</a>`;
   const fields = s.type === 'sale' ? [['sale',t('درصد از قیمت ملک','Percentage of sale price')]] :
     [['deposit',t('درصد از پول پیش','Percentage of deposit')],...(s.type === 'lease' ? [['rent',t('درصد از اجارهٔ یک ماه','Percentage of one month’s rent')]] : [])];
   const summary = s.type === 'sale' ? t('۰٫۲۵٪ قیمت ملک برای هر طرف', '0.25% of the sale price per party') :
@@ -283,8 +294,7 @@ function renderCompare() {
     </section>`).join('')}</div>`, true) +
     `<article class="card glass wide compareResult resultStage"><div class="stageBar">${step(true,'calc')}</div><div class="compareSectionHead">
       <div class="resultTitle"><h2 id="result-heading" tabindex="-1">${t('نتیجهٔ مقایسه','Comparison result')}</h2></div>
-      <div class="resultActions">${btn('save',t('ذخیره نتیجه','Save result'),'button','save')}${btn('copy',t('کپی نتیجه','Copy result'),'quiet','copy')}</div>
-    </div>${warningsPanel()}<div id="result" aria-live="polite"></div></article>`;
+    </div>${warningsPanel()}<div id="result" aria-live="polite"></div>${resultActions()}</article>`;
 }
 const views = { convert: renderConvert, renewal: renderRenewal, fee: renderFee, compare: renderCompare };
 function render(keepRate = false) {
@@ -301,7 +311,7 @@ function warn(title, message, source = '') {
   warnings.set(title,{message,source});
 }
 function warningMarkup() {
-  return [...warnings].map(([title,{message,source}])=>`<div class="warning">${icon('warning')}<div><strong>${title}</strong><p>${message}</p>${source ? `<a href="${source}" target="_blank" rel="noopener noreferrer">${t('دیدن منبع و شرایط','See source and conditions')}</a>` : ''}</div></div>`).join('');
+  return [...warnings].map(([title,{message,source}])=>`<div class="warning">${icon('warning')}<div><strong>${title}</strong><p>${message}</p>${source ? `<a href="${escape(source)}" target="_blank" rel="noopener noreferrer">${t('دیدن منبع و شرایط','See source and conditions')}</a>` : ''}</div></div>`).join('');
 }
 function flag(name, message) {
   const input = $('in-' + name);
@@ -397,7 +407,7 @@ function warnRenewal(high) {
   const active = date >= renewalReference.start && date <= renewalReference.end;
   warn(t('افزایش بیشتر از ۲۵٪','Increase above 25%'), high.join(' · ') + '. ' + (active ?
     t('مصوبهٔ ۱۴۰۵ برای تمدید مشمولِ اجارهٔ مسکونی، با درخواست مستأجر، سقف ۲۵٪ برای اجاره و پول پیش دارد. شرایط و استثناها را ببینید.', 'The 1405 rule caps increases in rent and deposit at 25% for qualifying residential renewals requested by the tenant. Check conditions and exceptions.') :
-    t('۲۵٪ در اینجا فقط معیار مقایسه با مصوبهٔ ۱۴۰۵ است. مقررات تاریخ قرارداد را جداگانه بررسی کنید.', '25% is a reference to the 1405 rule. Check the rules for your contract dates.')),renewalReference.source);
+    t('۲۵٪ در اینجا فقط معیار مقایسه با مصوبهٔ ۱۴۰۵ است. مقررات تاریخ قرارداد را جداگانه بررسی کنید.', '25% is a reference to the 1405 rule. Check the rules for your contract dates.')),destination('renewal'));
 }
 function renewal() {
   const s = state.renewal;
@@ -475,7 +485,7 @@ function fee() {
     basis = t('اجارهٔ ماهانهٔ معادل', 'Equivalent monthly rent');
   }
   if (official && currentTariff() && !matchingTariff()) warn(t('تعرفه را تغییر دادید','You changed the saved tariff'), t('نتیجه با درصد یا سقف جدید حساب می‌شود. برای برگشت، «بازگردانی نرخ ذخیره‌شده» را بزنید.','The result uses your edited figures. Restore the saved rate to undo the changes.'));
-  if (!official && s.type === 'sale' && factor !== null && factor * (s.quote === 'side' ? 2n : 1n) > 5000n) warn(t('درصد پیشنهادی بالاتر از نرخ مرجع تهران است','Quote exceeds the Tehran reference'),t('برای خرید و فروش، نرخنامهٔ گزارش‌شدهٔ تهران ۰٫۵٪ در مجموع دو طرف است. تعرفهٔ محل ملک را بررسی کنید.','The reported Tehran sale tariff is 0.5% for both parties combined. Check the applicable local tariff.'),tehranReference.source);
+  if (!official && s.type === 'sale' && factor !== null && factor * (s.quote === 'side' ? 2n : 1n) > 5000n) warn(t('درصد پیشنهادی بالاتر از نرخ مرجع تهران است','Quote exceeds the Tehran reference'),t('برای خرید و فروش، نرخنامهٔ گزارش‌شدهٔ تهران ۰٫۵٪ در مجموع دو طرف است. تعرفهٔ محل ملک را بررسی کنید.','The reported Tehran sale tariff is 0.5% for both parties combined. Check the applicable local tariff.'),destination('tehran'));
   if (issue || numerator == null || factor === null || vat === null) return;
   const values = commission(numerator, denominator, factor, vat, !official && s.quote === 'side', cap);
   const label = t('پرداختی کل دو طرف','Total payable by both parties');
@@ -502,7 +512,7 @@ function calculateTehranFee(s) {
   const cap = blank(s.tehran.cap) ? null : readMoney('tehran-cap',s.tehran.cap);
   const edited = [...names,'vat'].some(name=>rates[name] !== percentage(tehranReference[name])) || !blank(s.tehran.cap);
   if (edited) warn(t('مبنای محاسبه را تغییر دادید','You changed the calculation basis'),
-    t('این نتیجه با درصد، سقف یا مالیات دلخواه شما حساب می‌شود. برای برگشت، «برگرداندن نرخ‌های پیش‌فرض» را بزنید.','The result uses your override. Choose Restore default rates to undo the override.'),tehranReference.source);
+    t('این نتیجه با درصد، سقف یا مالیات دلخواه شما حساب می‌شود. برای برگشت، «برگرداندن نرخ‌های پیش‌فرض» را بزنید.','The result uses your override. Choose Restore default rates to undo the override.'),destination('tehran'));
   const amounts = s.type === 'sale' ? {price:readMoney('price',s.price)} : {
     deposit:readMoney('deposit',s.deposit,s.type === 'lease' && !blank(s.rent)),
     rent:s.type === 'full' ? 0n : readMoney('rent',s.rent,!blank(s.deposit))
@@ -518,7 +528,7 @@ function calculateTehranFee(s) {
     [t('سقف ثابت کمیسیون','Fixed fee cap'),cap === null ? t('تأیید نشده و اعمال نشده','Unverified and not applied') : amount(cap)]
   ];
   show(metric(resultLabel,values.total,true) + `<div class="figures">${metric(first,values.first)}${metric(second,values.second)}</div>` + rows.map(entry=>row(...entry)).join(''),
-    [[resultLabel,amount(values.total)],[first,amount(values.first)],[second,amount(values.second)],...rows].map(entry=>withLabel(...entry)).concat(tehranReference.source));
+    [[resultLabel,amount(values.total)],[first,amount(values.first)],[second,amount(values.second)],...rows].map(entry=>withLabel(...entry)).concat(destination('tehran')));
 }
 function compare() {
   const s = state.compare;
@@ -544,10 +554,66 @@ function compare() {
   const cashLabel = t('هزینهٔ نقدی دوره','Cash cost over term');
   const note = t('هزینهٔ نقدی شامل اجارهٔ دوره و هزینهٔ یک‌باره است. هزینهٔ مقایسه‌ای، معادل اجارهٔ مبلغ رهن را هم لحاظ می‌کند. اصل رهن جداگانه نمایش داده شده است.', 'Cash cost includes rent over the term and one-time fees. Comparable cost also includes the rental equivalent of the deposit. Deposit principal is shown separately.');
   show(`<div class="resultMain compareSummary"><div><span>${t('کمترین هزینهٔ مقایسه‌ای','Lowest comparable cost')}</span><strong>${winner}</strong></div><b dir="auto">${amount(cheapest)}</b></div>
+    ${row(t('مدت قرارداد','Contract term'), `${number(months)} ${t('ماه','months')}`)}${row(rateLabel(), amount(rate))}
     <div class="scenarios">${offers.map(offer=>`<article class="scenario ${offer.comparable === cheapest ? 'bestOffer' : ''}"><h3>${offerName(offer.i)}</h3>${row(totalLabel,amount(offer.comparable))}${row(cashLabel,amount(offer.cash))}${row(depositLabel(),amount(offer.deposit))}${row(t('اختلاف با کمترین هزینه','Above lowest cost'),amount(offer.comparable-cheapest))}</article>`).join('')}</div><p class="note">${note}</p>`,
     [withLabel(t('کمترین هزینهٔ مقایسه‌ای','Lowest comparable cost'),winner),withLabel(t('مدت','Term'),`${number(months)} ${t('ماه','months')}`),withLabel(rateLabel(),amount(rate)),...offers.map(offer=>`${offerName(offer.i)} · ${withLabel(totalLabel,amount(offer.comparable))} · ${withLabel(cashLabel,amount(offer.cash))} · ${withLabel(depositLabel(),amount(offer.deposit))}`),note]);
 }
 const calculators = {convert,renewal,fee,compare};
+function showSteps() {
+  const steps = [
+    [t('انتخاب محاسبه‌گر', 'Choose a calculator'), 'nav'],
+    [t('وارد کردن مبلغ‌ها', 'Enter amounts'), 'workspace'],
+    [t('نتیجه و دریافت خروجی', 'Review and export'), 'result-heading']
+  ];
+  $('steps').innerHTML = steps.map(([title, id], index) =>
+    `<li><a href="#${id}" ${index === (report ? 2 : 1) ? 'aria-current="step"' : ''}>
+    <span aria-hidden="true">${number(index + 1)}</span>${title}</a></li>`).join('');
+}
+let exporting = false;
+async function exportResult(format) {
+  if (exporting || !report) return;
+  exporting = true;
+  const card = document.querySelector('.resultStage');
+  const snapshot = card.cloneNode(true);
+  snapshot.querySelector('.resultActions')?.remove();
+  const brand = document.createElement('footer');
+  brand.className = 'exportBrand';
+  const credit = document.createElement('strong');
+  credit.textContent = raw('© ملک‌سنج · همهٔ حقوق محفوظ است.', '© Melksanj · All rights reserved.');
+  const origin = document.createElement('span');
+  origin.dir = 'ltr';
+  origin.textContent = location.hostname;
+  brand.append(credit, origin);
+  snapshot.append(brand);
+  const sources = [...new Set([
+    ...[...warnings.values()].map(({source}) => source),
+    ...(state.tab === 'fee' && state.fee.mode === 'official' ? [matchingTariff()?.source] : []),
+    ...(state.tab === 'fee' && state.fee.mode === 'tehran' ? [destination('tehran')] : [])
+  ].filter(Boolean))];
+  if (sources.length) {
+    const references = document.createElement('div');
+    references.className = 'exportSources';
+    for (const url of sources) {
+      const line = document.createElement('p');
+      line.textContent = url;
+      references.append(line);
+    }
+    brand.before(references);
+  }
+  const width = card.getBoundingClientRect().width;
+  const refresh = () => $('workspace').querySelectorAll('[data-action^=export-]').forEach(button => button.disabled = exporting || !report);
+  refresh();
+  try {
+    const { downloadResult } = await import('./result-export.mjs');
+    await downloadResult(snapshot, { width, format });
+  } catch (error) {
+    console.error('Melksanj export failed', error);
+    notify(t('خروجی ساخته نشد. دوباره تلاش کنید.', 'Could not create the export. Try again.'));
+  } finally {
+    exporting = false;
+    refresh();
+  }
+}
 function calculate() {
   issue = '';
   warnings.clear();
@@ -581,7 +647,12 @@ function calculate() {
   const corrected = t('پس از اصلاح ورودی، نتیجه دوباره محاسبه می‌شود.', 'The result will update when the input is corrected.');
   const html = report?.html ?? `<div class="empty">${issue ? corrected : state.tab === 'compare' ? compareEmpty : empty}</div>`;
   if ($('result').innerHTML !== html) $('result').innerHTML = html;
-  $('workspace').querySelectorAll('[data-action=copy],[data-action=save]').forEach(button=>button.disabled = !report);
+  $('workspace').querySelectorAll('[data-action=copy],[data-action=save],[data-action^=export-]').forEach(button =>
+    button.disabled = !report || (exporting && button.dataset.action.startsWith('export-')));
+  if ($('steps').dataset.ready !== String(Boolean(report))) {
+    $('steps').dataset.ready = Boolean(report);
+    showSteps();
+  }
 }
 
 function inputsChanged(input) {
@@ -794,6 +865,10 @@ document.addEventListener('click', event => {
       notify(storageAvailable ? t('نتیجه در سوابق ذخیره شد.','Result saved to history.') : t('نتیجه تا زمان باز بودن این صفحه در سوابق می‌ماند.','Result is saved for this page session.'));
       break;
     }
+    case 'export-png':
+    case 'export-pdf':
+      void exportResult(action.slice(7));
+      break;
     case 'copy':
       if (report) void copy(reportText());
       break;

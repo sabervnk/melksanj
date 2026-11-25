@@ -1,3 +1,4 @@
+import { safeSiteLink, siteLinks } from '../site-links.mjs';
 import { catalog } from './catalog.mjs';
 import { themeFields, isColor, fonts } from '../content.mjs';
 
@@ -13,6 +14,9 @@ const labels = {
   renewal:['تمدید قرارداد','Renewal'], fee:['کمیسیون','Agent fees'], compare:['مقایسه','Comparison'],
   shared:['فرم‌ها و پیام‌ها','Forms and messages'], history:['سوابق و اعلان‌ها','History and notices'],
   guide:['راهنما و منابع','Guide and sources'], footer:['فوتر و ارتباط','Footer and contact'],
+  links:['لینک‌های سایت','Site links'],
+  linkHelp:['آدرس کامل، ایمیل با mailto: یا مسیر داخلی وارد کنید. فیلد خالی، آدرس پیش‌فرض را برمی‌گرداند.','Enter a full URL, a mailto: address, or an internal path. Clear the field to restore the default.'],
+  badLink:['آدرس معتبر نیست.','Enter a valid link.'],
   security:['رمز ورود','Password'], dark:['تیره','Dark'], light:['روشن','Light'],
   search:['جستجو در نوشته‌ها','Search site copy'], noMatches:['نوشته‌ای پیدا نشد.','No matching text.'],
   current:['رمز فعلی','Current password'], next:['رمز جدید (حداقل ۱۴ کاراکتر)','New password (at least 14 characters)'],
@@ -29,9 +33,9 @@ const labels = {
   invalidContent:['مقدار یکی از فیلدها قابل ذخیره نیست.','One of the values cannot be saved.'],
   reset:['پیش‌فرض','Default'], lighterColors:['رنگ‌های حالت روشن','Light theme colors'], darkerColors:['رنگ‌های حالت تیره','Dark theme colors']
 };
-const sections = ['appearance','header','convert','renewal','fee','compare','shared','history','guide','footer','security'];
+const sections = ['appearance','header','convert','renewal','fee','compare','shared','history','guide','footer','links','security'];
 const liveTabs = new Set(['convert','renewal','fee','compare']);
-const defaults = () => ({ text: {}, theme: { light: {}, dark: {} }, appearance: {} });
+const defaults = () => ({ text: {}, links: {}, theme: { light: {}, dark: {} }, appearance: {} });
 let lang = new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'fa';
 let selected = 'appearance';
 let previewLang = lang;
@@ -39,6 +43,7 @@ let previewTheme = 'light';
 let draft = defaults();
 let revision = 0;
 let dirty = false;
+const invalidLinks = new Map();
 let statusTimer;
 const t = key => labels[key]?.[lang === 'en' ? 1 : 0] ?? labels.failure[lang === 'en' ? 1 : 0];
 
@@ -103,6 +108,7 @@ function render() {
   $('body').replaceChildren();
   if (selected === 'appearance') appearance();
   else if (selected === 'security') security();
+  else if (selected === 'links') editLinks();
   else copy();
   preview();
 }
@@ -167,6 +173,26 @@ function appearance() {
     $('body').append(group);
   }
 }
+function editLinks() {
+  $('body').append(element('p', t('linkHelp')));
+  for (const [key, link] of Object.entries(siteLinks)) {
+    const input = element('input', '', { type:'text', dir:'ltr', maxlength:2048, placeholder:link.fallback });
+    input.value = invalidLinks.get(key) ?? draft.links[key] ?? '';
+    if (invalidLinks.has(key)) input.setCustomValidity(t('badLink'));
+    input.oninput = () => {
+      const value = input.value.trim();
+      const destination = value && safeSiteLink(value);
+      input.setCustomValidity(value && !destination ? t('badLink') : '');
+      if (value && !destination) invalidLinks.set(key, input.value);
+      else invalidLinks.delete(key);
+      if (destination) draft.links[key] = destination;
+      else if (!value) delete draft.links[key];
+      changed();
+    };
+    $('body').append(control(link.title[lang === 'en' ? 1 : 0], input));
+  }
+}
+
 function copy() {
   const search = element('input','',{type:'search',placeholder:t('search'),'aria-label':t('search')});
   const list = element('div','',{class:'body'});
@@ -225,10 +251,11 @@ function security() {
 async function openStudio() {
   const result = await request('content');
   revision = result.revision;
+  invalidLinks.clear();
   const content = result.content;
   const text = Object.fromEntries(catalog.filter(({ key }) => Object.hasOwn(content.text ?? {}, key))
     .map(({ key }) => [key, content.text[key]]));
-  draft = { text, theme: { light: content.theme?.light ?? {}, dark: content.theme?.dark ?? {} }, appearance: content.appearance ?? {} };
+  draft = { text, links: content.links ?? {}, theme: { light: content.theme?.light ?? {}, dark: content.theme?.dark ?? {} }, appearance: content.appearance ?? {} };
   dirty = false;
   toggleSession(true);
   render();
@@ -259,6 +286,7 @@ $('logout').onclick = async () => {
   } catch (e) { announce(e.message,true); }
 };
 $('publish').onclick = async () => {
+  if (invalidLinks.size) { selected = 'links'; render(); $('body').querySelector(':invalid')?.reportValidity(); return; }
   $('publish').disabled = true;
   const submitted = JSON.stringify(draft);
   try {

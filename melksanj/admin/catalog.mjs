@@ -1390,5 +1390,53 @@ export const catalog = [
     "section": "shared",
     "fa": "تعرفه تا زمان باز بودن صفحه در دسترس است.",
     "en": "Tariff is available for this page session."
+  },
+  {
+    "key": "[\"© ملک‌سنج · همهٔ حقوق محفوظ است.\",\"© Melksanj · All rights reserved.\"]",
+    "section": "footer",
+    "fa": "© ملک‌سنج · همهٔ حقوق محفوظ است.",
+    "en": "© Melksanj · All rights reserved."
+  },
+  {
+    "key": "[\"دانلود عکس\",\"Download PNG\"]",
+    "section": "shared",
+    "fa": "دانلود عکس",
+    "en": "Download PNG"
+  },
+  {
+    "key": "[\"دانلود PDF\",\"Download PDF\"]",
+    "section": "shared",
+    "fa": "دانلود PDF",
+    "en": "Download PDF"
+  },
+  {
+    "key": "[\"۲. مبلغ‌ها را وارد کنید\",\"2. Enter your amounts\"]",
+    "section": "shared",
+    "fa": "۲. مبلغ‌ها را وارد کنید",
+    "en": "2. Enter your amounts"
+  },
+  {
+    "key": "[\"۳. نتیجه و خروجی\",\"3. Review and export\"]",
+    "section": "shared",
+    "fa": "۳. نتیجه و خروجی",
+    "en": "3. Review and export"
+  },
+  {
+    "key": "[\"انتخاب محاسبه‌گر\",\"Choose a calculator\"]",
+    "section": "shared",
+    "fa": "انتخاب محاسبه‌گر",
+    "en": "Choose a calculator"
+  },
+  {
+    "key": "[\"وارد کردن مبلغ‌ها\",\"Enter amounts\"]",
+    "section": "shared",
+    "fa": "وارد کردن مبلغ‌ها",
+    "en": "Enter amounts"
+  },
+  {
+    "key": "[\"نتیجه و دریافت خروجی\",\"Review and export\"]",
+    "section": "shared",
+    "fa": "نتیجه و دریافت خروجی",
+    "en": "Review and export"
   }
 ];

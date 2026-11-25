@@ -1,3 +1,4 @@
+import { safeSiteLink, siteLinks } from './site-links.mjs';
 import { fonts, isColor, themeFields } from './content.mjs';
 import { catalog } from './admin/catalog.mjs';
 
@@ -88,7 +89,14 @@ function cleanContent(input) {
     if (!Object.hasOwn(fonts, font)) throw new Error('invalidContent');
     appearance.font = font;
   }
-  return { text, theme, appearance };
+  const links = {};
+  if (input.links !== undefined && !object(input.links)) throw new Error('invalidContent');
+  for (const [key, value] of Object.entries(input.links ?? {})) {
+    const link = safeSiteLink(value);
+    if (!Object.hasOwn(siteLinks, key) || !link) throw new Error('invalidContent');
+    links[key] = link;
+  }
+  return { text, theme, appearance, links };
 }
 async function login(request, env, body) {
   const db = env.CMS_DB;
