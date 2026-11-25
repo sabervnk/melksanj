@@ -1,16 +1,20 @@
+import { depositFromYield, depositFromComparable, marketRange } from './deposit-valuation.mjs';
 import { siteLink } from './site-links.mjs';
 import { loadContent, localized, applyTheme } from './content.mjs';
 import { tehranReference, renewalReference, tehranFee, renewalChanges } from './guidance.mjs';
 import { groupedInput, caretAt, separator } from './number-input.mjs';
-import { countyKey, tariffType, httpsSource, tariffDate, tehranDay, findTariff } from './tariff.mjs';
-import { MILLION, PERCENT, normalize, money, percentage, divide, monthlyFromFull, fullFromMonthly, equivalent, growthPercent, renew, commission, scenario } from './math.mjs';
+import { tehranDay } from './tariff.mjs';
+import { MILLION, PERCENT, LIMIT, normalize, money, percentage, divide, monthlyFromFull, fullFromMonthly, equivalent, growthPercent, renew, commission, scenario } from './math.mjs';
 
 const $ = id => document.getElementById(id);
 const initial = {
   lang: 'fa', theme: 'light', tab: 'convert', saved: [],
   convert: { mode: 'split', full: '', share: 50, deposit: '', rent: '', reverseDeposit: '', reverseRent: '', anchor: 'share', rate: '30000' },
   renewal: { mode: 'target', apply: 'both', deposit: '', rent: '', increase: '', newDeposit: '', newRent: '', rate: '30000' },
-  fee: { mode: 'tehran', type: 'sale', value: '', factor: '', vat: '', cap: '', tariffs: {}, county: '', localRates: [], loadedRate: null, quote: 'total', price: '', deposit: '', rent: '', custom: '', rate: '30000', tehran: {} },
+  fee: { mode: 'official', type: 'sale', value: '', factor: '', vat: '', cap: '', tariffs: {}, quote: 'total', price: '', deposit: '', rent: '', custom: '', rate: '30000', tehran: {} },
+  valuation: { priceMode:'total', evidence:'similar', marketValue:'', area:'', meterPrice:'', yield:'', rate:'30000', offers: [
+    { price:'', deposit:'', rent:'', adjustment:'' }, { price:'', deposit:'', rent:'', adjustment:'' }, { price:'', deposit:'', rent:'', adjustment:'' }
+  ] },
   compare: { rate: '30000', months: '12', offers: [{ deposit: '', rent: '', fee: '' }, { deposit: '', rent: '', fee: '' }] }
 };
 const previewMode = window.parent !== window && new URLSearchParams(location.search).has('preview');
@@ -19,18 +23,24 @@ let stored;
 try { if (!previewMode) stored = JSON.parse(localStorage.getItem(key)); } catch {}
 const state = structuredClone(initial);
 if (stored && typeof stored === 'object') {
-  for (const group of ['convert', 'renewal', 'fee', 'compare']) {
+  for (const group of ['convert', 'renewal', 'fee', 'compare', 'valuation']) {
     if (stored[group] && typeof stored[group] === 'object') Object.assign(state[group], stored[group]);
   }
   for (const name of ['lang', 'theme', 'tab']) if (typeof stored[name] === 'string') state[name] = stored[name];
   if (Array.isArray(stored.saved)) state.saved = stored.saved.slice(0, 12);
 }
+if (!Array.isArray(state.valuation.offers) || state.valuation.offers.length !== 3 ||
+    state.valuation.offers.some(item => !item || typeof item !== 'object')) state.valuation.offers = structuredClone(initial.valuation.offers);
+if (!['total','meter'].includes(state.valuation.priceMode)) state.valuation.priceMode = 'total';
+if (!['similar','yield'].includes(state.valuation.evidence)) state.valuation.evidence = 'similar';
+// Old county records stay in local storage. Require freshly confirmed values for rates previously filled by that feature.
+if (state.fee.loadedRate) Object.assign(state.fee, { factor:'', cap:'', loadedRate:null });
 const modes = { convert: ['split', 'reverse'], renewal: ['target', 'actual'], fee: ['tehran', 'official', 'estimate'] };
 for (const [group, values] of Object.entries(modes)) if (!values.includes(state[group].mode)) state[group].mode = initial[group].mode;
 if (!['both', 'deposit', 'rent'].includes(state.renewal.apply)) state.renewal.apply = 'both';
 if (!['sale', 'lease', 'full'].includes(state.fee.type)) state.fee.type = 'sale';
 if (!Array.isArray(state.compare.offers) || state.compare.offers.length < 2 || state.compare.offers.length > 3 || state.compare.offers.some(item => !item || typeof item !== 'object')) state.compare.offers = structuredClone(initial.compare.offers);
-if (!Object.hasOwn(initial, state.tab) || !['convert', 'renewal', 'fee', 'compare'].includes(state.tab)) state.tab = 'convert';
+if (!Object.hasOwn(initial, state.tab) || !['convert', 'renewal', 'fee', 'compare', 'valuation'].includes(state.tab)) state.tab = 'convert';
 let storageAvailable = true;
 function persist() {
   if (previewMode) return;
@@ -52,9 +62,7 @@ const signed = value => `${value > 0n ? '+' : ''}${amount(value)}`;
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const destination = id => siteLink(content, id);
 const copyright = () => t('© ملک‌سنج · همهٔ حقوق محفوظ است.', '© Melksanj · All rights reserved.');
-if (!Array.isArray(state.fee.localRates)) state.fee.localRates = [];
 if (!state.fee.tehran || typeof state.fee.tehran !== 'object') state.fee.tehran = {};
-if (state.fee.mode === 'official' && !state.fee.county && !state.fee.value && !state.fee.factor && !state.fee.cap) state.fee.mode = 'tehran';
 const paths = {
   warning: '<path d="M10.3 4.9 2.5 18a1.8 1.8 0 0 0 1.6 2.7h15.8a1.8 1.8 0 0 0 1.6-2.7L13.7 4.9a2 2 0 0 0-3.4 0ZM12 9v4m0 3h.01"/>',
   input: '<path d="M12 20h9M16.5 3.5l4 4L8 20l-5 1 1-5 12.5-12.5Z"/>',
@@ -69,11 +77,13 @@ const paths = {
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 5V4H4v12h1"/>',
   save: '<path d="M6 4h12v16l-6-4-6 4V4Z"/>',
   close: '<path d="m6 6 12 12m0-12L6 18"/>',
+  house: '<path d="M3 11.5 12 4l9 7.5M6 10v10h12V10m-8 10v-5h4v5"/>',
   download: '<path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/>',
   plus: '<path d="M12 5v14M5 12h14"/>'
 };
 const icon = name => `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">${paths[name]}</svg>`;
 const tabs = () => ({
+  valuation: [t('برآورد رهن ملک','Estimate full deposit'), 'house'],
   convert: [t('تبدیل رهن و اجاره', 'Convert rent & deposit'), 'arrows'],
   renewal: [t('تمدید قرارداد', 'Renewal'), 'renew'],
   fee: [t('کمیسیون بنگاه', 'Agent fees'), 'bill'],
@@ -106,11 +116,15 @@ const step = (isResult, image) => `<div class="step"><span class="tile">${icon(i
 const reset = () => btn('reset',t('پاک کردن فرم','Clear form'),'quiet reset', 'renew');
 const warningsPanel = () => '<div id="warnings" class="warnings" aria-live="polite"></div>';
 const card = (title, description, contents, wide = false) => `<article class="card glass ${wide ? 'wide' : ''}"><div class="stageBar">${step(false,'input')}${reset()}</div><div class="cardHead"><div><h2>${title}</h2><p>${description}</p></div></div>${contents}<div id="error" class="notice" role="status"></div><button type="button" class="quiet jumpResult" data-action="jump-result">${icon('calc')}${t('دیدن نتیجه','See result')}</button></article>`;
-const resultActions = () => `<div class="resultActions">
-  ${btn('export-png', t('دانلود عکس', 'Download PNG'), 'button', 'download')}
-  ${btn('export-pdf', t('دانلود PDF', 'Download PDF'), 'quiet', 'download')}
-  ${btn('save', t('ذخیره نتیجه', 'Save result'), 'quiet', 'save')}
-  ${btn('copy', t('کپی نتیجه', 'Copy result'), 'quiet', 'copy')}
+const resultActions = () => `<div class="resultActions resultToolbar">
+  <div class="resultDownloads" role="group" aria-label="${t('دریافت فایل','Download result')}">
+    ${btn('export-png', t('دانلود عکس', 'Download PNG'), 'button exportButton', 'download')}
+    ${btn('export-pdf', t('دانلود PDF', 'Download PDF'), 'quiet exportButton', 'bill')}
+  </div>
+  <div class="resultSaves" role="group" aria-label="${t('نگه‌داشتن نتیجه','Keep result')}">
+    ${btn('save', t('ذخیره نتیجه', 'Save result'), 'quiet', 'save')}
+    ${btn('copy', t('کپی نتیجه', 'Copy result'), 'quiet', 'copy')}
+  </div>
 </div>`;
 const panel = () => `<aside class="card glass result resultStage" aria-labelledby="result-heading"><div class="stageBar">${step(true,'calc')}</div><div class="resultTitle"><h2 id="result-heading" tabindex="-1">${t('نتیجهٔ محاسبه', 'Calculation result')}</h2></div>${warningsPanel()}<div id="result" aria-live="polite"></div>${resultActions()}</aside>`;
 const metric = (label, value, main = false) => `<div class="${main ? 'resultMain' : 'figure'}"><span class="amountLabel">${label}</span><strong dir="auto">${number(value)}</strong><small>${unit()}</small></div>`;
@@ -175,44 +189,16 @@ function renderRenewal() {
     <div><span class="label">${t('اعمال تغییر روی','Apply change to')}</span>${group('apply',t('اعمال تغییر روی','Apply change to'),[['both',t('رهن و اجاره','Both')],['deposit',t('فقط رهن','Deposit only')],['rent',t('فقط اجاره','Rent only')]],s.apply)}</div>` :
     `<div><span class="label">${t('قرارداد جدید','New contract')}</span><div class="fields">${field('newDeposit',depositLabel(),s.newDeposit)}${field('newRent',rentLabel(),s.newRent)}</div></div>`}</div>` + rateField(s.rate)) + panel();
 }
-function textField(name, label, value, example, options = {}) {
-  return `<label class="field" for="in-${name}"><span class="label">${label}</span><span class="fieldBox">
-    <input type="text" id="in-${name}" ${options.ltr ? 'dir="ltr"' : ''} ${options.list ? 'list="counties"' : ''}
-      placeholder="${escape(example)}" value="${escape(value)}" autocomplete="off" spellcheck="false" maxlength="${name === 'source' ? 2048 : 90}">
-    </span></label>`;
-}
-const currentTariff = () => findTariff(state.fee.localRates,state.fee.county,state.fee.type,tehranDay());
-const rateKey = record => JSON.stringify([record.key,record.type,record.from,record.until,record.source,record.factor,record.cap]);
-function syncTariffFields() {
-  $('in-factor').value = formatted(state.fee.factor,'decimal');
-  $('in-cap').value = formatted(state.fee.cap,'money');
-}
-function matchingTariff() {
-  const record = currentTariff();
-  return record && percentage(record.factor) === percentage(state.fee.factor) && money(record.cap) === money(state.fee.cap) ? record : null;
-}
-const shownDate = value => new Intl.DateTimeFormat(locale(), {dateStyle:'medium',timeZone:'UTC'}).format(new Date(value + 'T00:00:00Z'));
-function countyLookup(s) {
-  const counties = [...new Set(s.localRates.map(record => record.county))];
-  return `<section class="tariffLookup">
-    <form id="countyForm" class="lookupForm">${textField('county',t('شهرستان محل ملک','County where the property is located'),s.county,t('مثلاً تهران','e.g. Tehran'),{list:true})}
-    <button type="submit" class="quiet">${t('بازگردانی نرخ ذخیره‌شده','Restore saved rate')}</button>
-    </form><datalist id="counties">${counties.map(name=>`<option value="${escape(name)}"></option>`).join('')}</datalist>
-    <div id="tariffStatus" class="fieldNote" role="status"></div>
-    <p class="help">${t('این دکمه نرخ قبلیِ همین مرورگر را برمی‌گرداند. برای استعلام، به اتحادیهٔ محل ملک مراجعه کنید.','This button restores rates saved in this browser. Ask your local trade authority for the applicable tariff.')}</p>
-    <a class="sourceLink" href="${escape(destination('regulation'))}" target="_blank" rel="noopener noreferrer">${t('آیین‌نامه و روش تعیین تعرفه','Regulation and tariff method')}</a>
-    </section>`;
-}
-function tariffSaveForm() {
-  return `<details id="tariffSave" class="inlineDetails"><summary>${t('ذخیرهٔ تعرفه با منبع و تاریخ اعتبار','Save tariff with source and dates')}</summary>
-    <p class="help">${t('بعد از استعلام، ضریب و سقف را در فرم بالا بنویسید. سپس لینک منبع و بازهٔ اعتبار را ثبت کنید تا دفعهٔ بعد خودکار پر شوند. تاریخ‌ها می‌توانند شمسی یا میلادی باشند.','Enter the confirmed coefficient and cap above, then save the source link and validity dates. Use Solar Hijri or Gregorian dates.')}</p>
-    <form id="tariffForm" class="stack">
-    ${textField('source',t('لینک بخشنامه یا نرخنامه','Link to the notice or tariff'),'',t('مثلاً https://example.org/rates','e.g. https://example.org/rates'),{ltr:true})}
-    <div class="fields">${textField('from',t('شروع اعتبار','Valid from'),'',t('مثلاً ۱۴۰۵/۰۱/۰۱','e.g. 2026-03-21'),{ltr:true})}
-    ${textField('until',t('پایان اعتبار','Valid until'),'',t('مثلاً ۱۴۰۵/۱۲/۲۹','e.g. 2027-03-20'),{ltr:true})}</div>
-    <div><button type="submit" class="quiet">${t('ثبت نرخ برای این شهرستان','Save rate for this county')}</button></div>
-    <p id="tariffError" class="notice" role="status"></p></form>
-    </details>`;
+function tariffSources() {
+  return `<section class="tariffSources">
+    <span class="sourceEmblem">${icon('bill')}</span>
+    <div><h3>${t('ضریب مصوب را از کجا بگیرم؟','Where can I get the approved tariff?')}</h3>
+    <p>${t('برای شهرستان و نوع قرارداد خود، نرخنامهٔ معتبر را از اتحادیهٔ مشاوران املاک یا ادارهٔ صمت محل بگیرید. ضریب، سقف و تاریخ اعتبار را بررسی کنید. در قراردادهای مشمول، مبلغ ثبت‌شده در سامانه ملاک بررسی است.','Request the tariff for your county and transaction type from the local real-estate union or industry and trade office. Check the coefficient, cap and effective dates. For covered transactions, verify the fee recorded in the registration system.')}</p>
+    <div class="tariffLinks">
+      <a href="${escape(destination('registry'))}" target="_blank" rel="noopener noreferrer">${t('درگاه رسمی کاتب','Official Kateb portal')} ↗</a>
+      <a href="${escape(destination('regulation'))}" target="_blank" rel="noopener noreferrer">${t('مادهٔ ۷ آیین‌نامه و مبنای تعرفه','Article 7 and the tariff basis')} ↗</a>
+    </div></div>
+  </section>`;
 }
 function feeAmounts(s) {
   return s.type === 'sale' ? field('price',t('قیمت خرید یا فروش ملک','Agreed sale price'),s.price) :
@@ -220,14 +206,14 @@ function feeAmounts(s) {
 }
 function renderTehranFee(s) {
   const offer = s.tehran;
-  const source = `<a href="${escape(destination('tehran'))}" target="_blank" rel="noopener noreferrer">${t('منبع نرخنامهٔ تهران · ۱۵ شهریور ۱۴۰۵','Tehran tariff source · 6 September 2026')}</a>`;
+  const source = `<a href="${escape(destination('tehran'))}" target="_blank" rel="noopener noreferrer">${t('متن نرخنامهٔ مرجع تهران · ۱۳۹۹','Tehran reference schedule · 1399')}</a>`;
   const fields = s.type === 'sale' ? [['sale',t('درصد از قیمت ملک','Percentage of sale price')]] :
     [['deposit',t('درصد از پول پیش','Percentage of deposit')],...(s.type === 'lease' ? [['rent',t('درصد از اجارهٔ یک ماه','Percentage of one month’s rent')]] : [])];
   const summary = s.type === 'sale' ? t('۰٫۲۵٪ قیمت ملک برای هر طرف', '0.25% of the sale price per party') :
     s.type === 'lease' ? t('۰٫۵٪ پول پیش و ۲۵٪ اجارهٔ یک ماه برای هر طرف', '0.5% of the deposit plus 25% of one month’s rent per party') :
     t('۰٫۵٪ پول پیش برای هر طرف','0.5% of the deposit per party');
   return `<div class="stack">${feeAmounts(s)}
-    <div class="reference"><strong>${t('مبنای محاسبه: نرخنامهٔ صنفی تهران','Basis: reported Tehran trade tariff')}</strong><p>${summary}</p><p class="help">${t('سقف ثابتِ تأییدشده در این منبع پیدا نشد. اگر سقف قرارداد را از مرجع مربوط گرفته‌اید، آن را وارد کنید.','A verified fixed cap was unavailable. Enter a cap if the relevant authority has supplied one.')}</p>${source}</div></div>
+    <div class="reference"><strong>${t('نمونهٔ محاسبه با نرخنامهٔ پیشین تهران','Example using the earlier Tehran tariff')}</strong><p>${summary}</p><p class="help">${t('برای معاملهٔ فعلی، اعتبار نرخ و سقف را از مرجع محل بررسی کنید.','Confirm the current fee and cap with the local authority for your transaction.')}</p>${source}</div></div>
     <details id="tehranDetails" class="inlineDetails"><summary>${t('دیدن یا تغییر درصدها، سقف و مالیات','View or change rates, cap and VAT')}</summary>
     <div class="stack"><div class="fields">${fields.map(([name,label])=>field('tehran-'+name,label,offer[name] ?? tehranReference[name],{...pctOpts(),example:tehranReference[name]})).join('')}
       ${field('tehran-cap',t('سقف کمیسیون هر دو طرف، پیش از مالیات','Fee cap for both parties before VAT'),offer.cap ?? '',{example:'4000000'})}
@@ -237,47 +223,66 @@ function renderFee() {
   const s = state.fee;
   const official = s.mode === 'official';
   return card(t('کمیسیون بنگاه چقدر می‌شود؟','How much is the agent fee?'), t('ببینید هر طرف معامله با احتساب مالیات چقدر می‌پردازد.', 'See what each party would pay including tax.'),
-    group('mode',t('روش محاسبهٔ کمیسیون','How to calculate the fee'),[['tehran',t('نرخنامهٔ تهران','Tehran rates')],['official',t('تعرفهٔ شهر من','My city tariff')],['estimate',t('درصد پیشنهادی بنگاه','Agent’s quote')]],s.mode) +
+    group('mode',t('روش محاسبهٔ کمیسیون','How to calculate the fee'),[['official',t('با ضریب استعلام‌شده','Use a confirmed coefficient')],['tehran',t('نمونهٔ تهران','Tehran example')],['estimate',t('درصد پیشنهادی بنگاه','Agent’s quote')]],s.mode) +
     group('type',t('نوع معامله','Transaction type'),[['sale',t('خرید و فروش','Sale')],['lease',t('رهن و اجاره','Deposit & rent')],['full',t('رهن کامل','Full deposit')]],s.type) +
-    (s.mode === 'tehran' ? renderTehranFee(s) : `<div class="stack">${official ?
-      `${countyLookup(s)}
+    tariffSources() + (s.mode === 'tehran' ? renderTehranFee(s) : `<div class="stack">${official ?
+      `
       ${field('value',t('ارزش معاملاتی ملک','Property transactional value'),s.value,{help:t('مبلغی که ادارهٔ مالیات برای ملک تعیین می‌کند (مادهٔ ۶۴). آن را از مرجع مربوط بگیرید. قیمت توافقی خرید را اینجا وارد نکنید.','The tax authority’s Article 64 value. Obtain it from the relevant authority. Enter it here instead of the agreed sale price.')})}
-      <div class="fields">${field('factor',t('درصد مصوب کمیسیون','Approved fee percentage'),s.factor,{...pctOpts(),help:t('درصدی که به ارزش معاملاتی اعمال می‌شود، برای مجموع دو طرف.','Percentage applied to the transactional value, for both parties combined.')})}
+      <div class="fields">${field('factor',t('درصد مصوب کمیسیون','Approved fee percentage'),s.factor,{...pctOpts(),help:t('ضریب نرخنامه برای مجموع دو طرف را به درصد وارد کنید. اگر ضریب به‌صورت عدد اعشاری اعلام شده، ابتدا آن را در ۱۰۰ ضرب کنید.','Enter the combined coefficient as a percentage. If the tariff gives a decimal multiplier, multiply it by 100.')})}
       ${field('cap',t('حداکثر کمیسیون دو طرف','Maximum fee for both parties'),s.cap,{help:t('اگر نرخنامه سقف تعیین کرده، مبلغ آن را وارد کنید.','Enter the maximum if the tariff specifies one.')})}</div>` :
-      `${intro(t('این بخش چه کمکی می‌کند؟','What is this for?'),t('اگر بنگاه به شما درصدی گفته، آن را وارد کنید تا مبلغ تقریبی را ببینید. برای مبلغ قابل دریافت طبق قانون، «طبق تعرفهٔ شهرستان» را انتخاب کنید.','Enter the percentage quoted by the agent to see an estimate. Use the county tariff for the regulated amount.'))}
+      `${intro(t('این بخش چه کمکی می‌کند؟','What is this for?'),t('اگر بنگاه به شما درصدی گفته، آن را وارد کنید تا مبلغ تقریبی را ببینید. برای بررسی تعرفه، حالت «با ضریب استعلام‌شده» را انتخاب کنید.','Enter the percentage quoted by the agent to see an estimate. Use the confirmed-coefficient option to check the tariff.'))}
        ${s.type === 'sale' ? field('price',t('قیمت توافق‌شدهٔ ملک','Agreed sale price'),s.price) :
           `<div class="fields">${field('deposit',depositLabel(),s.deposit)}${s.type === 'lease' ? field('rent',rentLabel(),s.rent) : ''}</div><p class="help">${t('در این برآورد، پول پیش به اجاره تبدیل می‌شود و درصد روی مجموع اجارهٔ ماهانه اعمال می‌شود.','This estimate applies the percentage to monthly rent after converting the deposit to its monthly equivalent.')}</p>`}
        <div class="fields">${field('custom',t('درصد پیشنهادی بنگاه','Quoted fee percentage'),s.custom,pctOpts())}${select('quote',t('بنگاه این درصد را برای چه کسی گفته؟','Who does this percentage apply to?'),[['total',t('مجموع دو طرف','Both parties combined')],['side',t('هر طرف جداگانه','Each party separately')]],s.quote)}</div>`}
     ${field('vat',t('نرخ مالیات بر ارزش افزوده','VAT rate'),s.vat,{...pctOpts(),help:t('نرخ معتبر را از صورتحساب یا مرجع مربوط بگیرید. اگر مالیات اعمال نمی‌شود، صفر وارد کنید.','Use the applicable rate from the invoice or relevant authority. Enter zero if no tax applies.')})}</div>` +
-    (official ? tariffSaveForm() : s.type !== 'sale' ? rateField(s.rate) : ''))) + panel();
+    (!official && s.type !== 'sale' ? rateField(s.rate) : ''))) + panel();
 }
-function updateTariffStatus() {
-  const info = $('tariffStatus');
-  if (!info) return;
-  const record = matchingTariff();
-  const source = record && httpsSource(record.source);
-  const message = source ?
-    `<strong>${t('تعرفه از نرخ ذخیره‌شده پر شد.','Tariff loaded from your saved rate.')}</strong> ${t('اعتبار','Valid')} ${shownDate(record.from)} ${t('تا','to')} ${shownDate(record.until)} · <a target="_blank" rel="noopener noreferrer" href="${escape(source)}">${t('منبع ثبت‌شده','Saved source')}</a>` :
-    currentTariff() ? t('مبلغ یا درصد را دستی تغییر داده‌اید. برای برگشت به نرخ ذخیره‌شده، «بازگردانی نرخ ذخیره‌شده» را بزنید.','You edited the saved figures. Choose Restore saved rate to restore them.') :
-    state.fee.county ? t('برای این شهرستان و نوع قرارداد، تعرفهٔ معتبرِ ذخیره‌شده در دسترس نیست. اعداد استعلام‌شده را دستی وارد کنید.','There is no current saved tariff for this county and contract type. Enter the figures you obtained from the relevant authority.') :
-    t('برای شروع، نام شهرستان محل ملک را بنویسید.','Start by entering the county where the property is located.');
-  $('countyForm').querySelector('button').disabled = !currentTariff();
-  if (info.innerHTML !== message) info.innerHTML = message;
+function renderValuation() {
+  const s = state.valuation;
+  const sqm = t('متر مربع','m²');
+  const price = group('priceMode',t('روش ورود ارزش ملک','Property value input'),[
+    ['total',t('ارزش کل ملک','Total property value')],['meter',t('متراژ × قیمت هر متر','Area × price per m²')]
+  ],s.priceMode) + (s.priceMode === 'total' ?
+    field('marketValue',t('ارزش روز ملک','Current market value'),s.marketValue,{example:'6000000000'}) :
+    `<div class="fields">
+      ${field('area',t('متراژ مفید','Usable area'),s.area,{kind:'decimal',suffix:sqm,example:'85.5'})}
+      ${field('meterPrice',t('قیمت بازار هر متر مربع','Market price per m²'),s.meterPrice,{example:'80000000'})}
+    </div>`);
+  const evidence = group('evidence',t('مبنای برآورد','Estimation basis'),[
+    ['similar',t('قراردادهای قابل‌مقایسه','Comparable leases')],['yield',t('بازدهی سالانهٔ محله','Local annual yield')]
+  ],s.evidence) + (s.evidence === 'yield' ?
+    field('yield',t('بازدهی ناخالص سالانهٔ اجاره','Gross annual rental yield'),s.yield,{...pctOpts(),example:'5',
+      help:t('درصد را از داده‌های معتبر محله بگیرید. بازدهی ناخالص یعنی اجارهٔ معادل یک سال تقسیم بر ارزش روز ملک.','Use a reliable local figure. Gross yield is one year of equivalent rent divided by the property’s market value.')}) :
+    `<p class="help">${t('تا سه قرارداد نزدیک به ملک خود وارد کنید. برای هر نمونه، ارزش روز همان ملک و دست‌کم یکی از مبلغ‌های پول پیش یا اجاره را وارد کنید.','Add up to three nearby comparable leases. For each, enter that property’s market value and at least one of the deposit or rent amounts.')}</p>
+    ${s.offers.map((offer,i)=>`<section class="valuationOffer">
+      <h4>${t('ملک مشابه','Comparable property')} ${number(i+1)}</h4>
+      ${field(`offer-${i}-price`,t('ارزش روز ملک مشابه','Comparable market value'),offer.price,{example:'6000000000'})}
+      <div class="fields">
+        ${field(`offer-${i}-deposit`,depositLabel(),offer.deposit)}
+        ${field(`offer-${i}-rent`,rentLabel(),offer.rent)}
+      </div>
+      <details class="inlineDetails"><summary>${t('تعدیل اختلاف کیفیت و شرایط','Adjust for quality and terms')}</summary>
+        ${field(`offer-${i}-adjustment`,t('تعدیل برآورد برای ملک شما','Adjustment for your property'),offer.adjustment,
+          {...pctOpts(),example:'0',help:t('اختیاری. فقط با شواهد بازار وارد کنید؛ مثبت برای ملک شما که اجاره‌پذیری بالاتری دارد، منفی برای پایین‌تر. متراژ و ارزش ملک را دوباره در تعدیل حساب نکنید.','Optional. Use market evidence: positive when your property commands more rent, negative when it commands less. Avoid double-counting area or value.')})}
+      </details>
+    </section>`).join('')}`);
+  return card(t('ارزش ملک من چقدر رهن می‌دهد؟','What full deposit does this property support?'),
+    t('یک برآورد قابل‌مقایسه برای مذاکره، با فرض‌ها و داده‌هایی که خودت وارد می‌کنی.','Build a negotiation estimate from market evidence and your own assumptions.'),
+    `<div class="valuationStack">
+      <section class="valuationBlock"><h3><span>A</span>${t('ارزش ملک شما','Your property value')}</h3>${price}</section>
+      <section class="valuationBlock"><h3><span>B</span>${t('شواهد بازار','Market evidence')}</h3>${evidence}</section>
+      <section class="valuationBlock"><h3><span>C</span>${t('نرخ تبدیل توافقی','Agreed conversion rate')}</h3>
+        ${field('rate',rateLabel(),s.rate,{help:t('نرخ ماهانه برای تبدیل هر یک میلیون تومان پول پیش به اجاره. مقدار اولیه صرفاً نمونه و قابل‌تغییر است.','Monthly rent equivalent for one million toman of deposit. The initial value is an editable example.')})}
+      </section>
+      <details class="valuationMethod">
+        <summary>${t('چطور نمونهٔ بهتر انتخاب کنم؟','How do I choose better comparables?')}</summary>
+        <p>${t('قراردادهای تازه و ترجیحاً قطعیِ همان محله را انتخاب کنید. متراژ، سن و وضعیت بنا، طبقه، آسانسور و پارکینگ، دسترسی به خدمات و مدت و شرایط قرارداد را مقایسه کنید. قیمت آگهی ممکن است با معاملهٔ نهایی فرق داشته باشد.','Prefer recent, completed leases in the same neighborhood. Compare size, age and condition, floor, lift and parking, local services, and lease terms. Asking prices can differ from signed deals.')}</p>
+        <div class="tariffLinks"><a href="${escape(destination('rentLaw'))}" target="_blank" rel="noopener noreferrer">${t('مادهٔ ۸ قانون بازار اجاره','Rental market law, Article 8')} ↗</a>
+        <a href="${escape(destination('marketMethod'))}" target="_blank" rel="noopener noreferrer">${t('روش ارزیابی مقایسه‌ای RICS','RICS comparable evidence standard')} ↗</a></div>
+      </details>
+    </div>`) + panel();
 }
-function applyTariff() {
-  const record = currentTariff();
-  if (record) Object.assign(state.fee,{factor:record.factor,cap:record.cap,loadedRate:rateKey(record)});
-  else if (state.fee.loadedRate) Object.assign(state.fee,{factor:'',cap:'',loadedRate:null});
-}
-function selectCounty(value) {
-  const county = value.trim();
-  if (countyKey(state.fee.county) !== countyKey(county)) {
-    state.fee.tariffs = {};
-    if (state.fee.county) Object.assign(state.fee,{factor:'',cap:'',loadedRate:null});
-  }
-  state.fee.county = county;
-  applyTariff();
-}
+
 function renderCompare() {
   const s = state.compare;
   return card(t('مقایسهٔ پیشنهادهای اجاره','Compare rental offers'), t('برای هر خانه، پول پیش و اجاره را بنویسید. ببینید کدام گزینه در کل قرارداد به‌صرفه‌تر است.', 'Enter the deposit and rent for each home to see which costs less over the lease.'),
@@ -296,7 +301,7 @@ function renderCompare() {
       <div class="resultTitle"><h2 id="result-heading" tabindex="-1">${t('نتیجهٔ مقایسه','Comparison result')}</h2></div>
     </div>${warningsPanel()}<div id="result" aria-live="polite"></div>${resultActions()}</article>`;
 }
-const views = { convert: renderConvert, renewal: renderRenewal, fee: renderFee, compare: renderCompare };
+const views = { valuation:renderValuation, convert: renderConvert, renewal: renderRenewal, fee: renderFee, compare: renderCompare };
 function render(keepRate = false) {
   $('workspace').classList.toggle('compareWorkspace', state.tab === 'compare');
   $('workspace').innerHTML = views[state.tab]();
@@ -359,6 +364,7 @@ function convert() {
     rent = readMoney('reverseRent', s.reverseRent, !blank(s.reverseDeposit));
     if (rate === null || deposit === null || rent === null) return;
     full = equivalent(deposit, rent, rate);
+    if (full > LIMIT) return flag('reverseRent', t('رهن کامل از بیشینهٔ مبلغ قابل ورود بیشتر است.','The full deposit exceeds the maximum supported amount.'));
   } else {
     full = readMoney('full', s.full);
     const sharing = $('share');
@@ -399,8 +405,9 @@ function convert() {
   const other = reversed ? [[depositLabel(),deposit],[rentLabel(),rent]] : [[depositLabel(),deposit],[fullLabel(),full]];
   show(metric(...lead, true) + `<div class="figures">${other.map(entry => metric(...entry)).join('')}</div>` +
     row(rateLabel(), amount(rate)) +
+    (reversed ? `<span class="carryNote">${t('با انتخاب «اجاره‌ام چقدر می‌شود؟» همین رهن کامل وارد فرم می‌شود.','Switch to “How much is the rent?” to use this full-deposit amount.')}</span>` : '') +
     `<p class="note">${reversed ? t('مبلغ رهن و معادلِ رهنِ اجارهٔ ماهانه با هم جمع می‌شوند.','Add the deposit to the deposit equivalent of the monthly rent.') : t('هر بخش از رهن کامل که پرداخت نشود، به اجارهٔ ماهانه تبدیل می‌شود.','The portion of the full deposit that is left unpaid converts to monthly rent.')}</p>`,
-    [lead,...other,[rateLabel(),rate]].map(([label,value])=>withLabel(label,amount(value))), { deposit, rent });
+    [lead,...other,[rateLabel(),rate]].map(([label,value])=>withLabel(label,amount(value))), { deposit, rent, full });
 }
 function warnRenewal(high) {
   const date = tehranDay();
@@ -484,7 +491,6 @@ function fee() {
     conversionRate = rate;
     basis = t('اجارهٔ ماهانهٔ معادل', 'Equivalent monthly rent');
   }
-  if (official && currentTariff() && !matchingTariff()) warn(t('تعرفه را تغییر دادید','You changed the saved tariff'), t('نتیجه با درصد یا سقف جدید حساب می‌شود. برای برگشت، «بازگردانی نرخ ذخیره‌شده» را بزنید.','The result uses your edited figures. Restore the saved rate to undo the changes.'));
   if (!official && s.type === 'sale' && factor !== null && factor * (s.quote === 'side' ? 2n : 1n) > 5000n) warn(t('درصد پیشنهادی بالاتر از نرخ مرجع تهران است','Quote exceeds the Tehran reference'),t('برای خرید و فروش، نرخنامهٔ گزارش‌شدهٔ تهران ۰٫۵٪ در مجموع دو طرف است. تعرفهٔ محل ملک را بررسی کنید.','The reported Tehran sale tariff is 0.5% for both parties combined. Check the applicable local tariff.'),destination('tehran'));
   if (issue || numerator == null || factor === null || vat === null) return;
   const values = commission(numerator, denominator, factor, vat, !official && s.quote === 'side', cap);
@@ -499,12 +505,10 @@ function fee() {
     [t('حق‌الزحمهٔ پایهٔ کل','Total base fee'),amount(values.subtotal)],
     [t('مالیات بر ارزش افزوده','VAT') + ` (${percent(vat)})`, amount(values.tax)]
   ];
-  const record = official ? matchingTariff() : null;
-  const provenance = record ? [t('منبع تعرفه و پایان اعتبار','Tariff source and expiry'), `${record.source} · ${shownDate(record.until)}`] : null;
   const note = official ? t('محاسبه با فرض تقسیم برابر بین دو طرف. اعتبار اعداد ورودی را با منبع تعرفه بررسی کنید.', 'The fee is split equally. Check your figures against the tariff source.') : t('برآورد دستی با فرض تقسیم برابر بین طرفین.', 'Manual estimate assuming an equal split.');
   show(metric(label,values.total,true) + `<div class="figures">${metric(first,values.first)}${metric(second,values.second)}</div>` +
     rows.map(entry=>row(...entry)).join('') + `<p class="note">${note}</p>`,
-    [[label,amount(values.total)],[first,amount(values.first)],[second,amount(values.second)],...rows].map(entry=>withLabel(...entry)).concat(provenance ? [withLabel(...provenance),note] : [note]));
+    [[label,amount(values.total)],[first,amount(values.first)],[second,amount(values.second)],...rows].map(entry=>withLabel(...entry)).concat(official ? [destination('regulation'),note] : [note]));
 }
 function calculateTehranFee(s) {
   const names = s.type === 'sale' ? ['sale'] : s.type === 'lease' ? ['deposit','rent'] : ['deposit'];
@@ -558,7 +562,73 @@ function compare() {
     <div class="scenarios">${offers.map(offer=>`<article class="scenario ${offer.comparable === cheapest ? 'bestOffer' : ''}"><h3>${offerName(offer.i)}</h3>${row(totalLabel,amount(offer.comparable))}${row(cashLabel,amount(offer.cash))}${row(depositLabel(),amount(offer.deposit))}${row(t('اختلاف با کمترین هزینه','Above lowest cost'),amount(offer.comparable-cheapest))}</article>`).join('')}</div><p class="note">${note}</p>`,
     [withLabel(t('کمترین هزینهٔ مقایسه‌ای','Lowest comparable cost'),winner),withLabel(t('مدت','Term'),`${number(months)} ${t('ماه','months')}`),withLabel(rateLabel(),amount(rate)),...offers.map(offer=>`${offerName(offer.i)} · ${withLabel(totalLabel,amount(offer.comparable))} · ${withLabel(cashLabel,amount(offer.cash))} · ${withLabel(depositLabel(),amount(offer.deposit))}`),note]);
 }
-const calculators = {convert,renewal,fee,compare};
+function valuation() {
+  const s = state.valuation;
+  const rate = readRate(s.rate);
+  let value = null;
+  if (s.priceMode === 'total') {
+    value = readMoney('marketValue', s.marketValue);
+  } else {
+    const area = readPercent('area', s.area, 1n, 1_000_000_000n);
+    const meterPrice = readMoney('meterPrice', s.meterPrice);
+    if (area !== null && meterPrice !== null) value = divide(area * meterPrice, 10_000n);
+  }
+  if (value === null || rate === null) return;
+  if (value <= 0n || value > LIMIT) {
+    flag(s.priceMode === 'total' ? 'marketValue' : 'meterPrice',
+      t('ارزش ملک باید مثبت و حداکثر ۱۵ رقم باشد.','Property value must be positive and at most 15 digits.'));
+    return;
+  }
+  const values = [];
+  const evidence = [];
+  if (s.evidence === 'yield') {
+    const annualYield = readPercent('yield', s.yield, 1n, PERCENT);
+    if (annualYield === null) return;
+    values.push(depositFromYield(value, annualYield, rate));
+    evidence.push([t('بازدهی ناخالص سالانهٔ واردشده','Entered gross annual yield'),percent(annualYield)]);
+  } else {
+    s.offers.forEach((offer,i) => {
+      if (['price','deposit','rent','adjustment'].every(key => blank(offer[key]))) return;
+      const prefix = `offer-${i}-`;
+      const price = readMoney(prefix+'price', offer.price);
+      const deposit = readMoney(prefix+'deposit', offer.deposit, !blank(offer.rent));
+      const rent = readMoney(prefix+'rent', offer.rent, !blank(offer.deposit));
+      const adjustment = blank(offer.adjustment) ? 0n : readPercent(prefix+'adjustment',offer.adjustment,-500000n,500000n);
+      if (price === null || price <= 0n) flag(prefix+'price',t('برای هر نمونه، ارزش روزِ مثبت وارد کنید.','Enter a positive market value for each comparable.'));
+      if (deposit === null && rent === null) flag(prefix+'deposit',t('پول پیش یا اجارهٔ این نمونه را وارد کنید.','Enter this comparable’s deposit or rent.'));
+      if (!price || deposit === null || rent === null || adjustment === null) return;
+      if (deposit === 0n && rent === 0n) {
+        flag(prefix+'deposit',t('پول پیش و اجاره نمی‌توانند هر دو صفر باشند.','Deposit and rent cannot both be zero.'));
+        return;
+      }
+      const estimate = depositFromComparable(value,price,deposit,rent,rate,adjustment);
+      values.push(estimate);
+      evidence.push([`${t('برآورد از ملک مشابه','Estimate from comparable')} ${number(i+1)}`,amount(estimate)]);
+      evidence.push([`${t('ارزش روز نمونه','Comparable market value')} ${number(i+1)}`,amount(price)]);
+      evidence.push([`${depositLabel()} · ${t('نمونه','Comparable')} ${number(i+1)}`,amount(deposit)]);
+      evidence.push([`${rentLabel()} · ${t('نمونه','Comparable')} ${number(i+1)}`,amount(rent)]);
+      if (adjustment) evidence.push([`${t('تعدیل نمونه','Comparable adjustment')} ${number(i+1)}`,percent(adjustment)]);
+    });
+  }
+  if (issue || !values.length) return;
+  const { median, low, high } = marketRange(values);
+  const title = t('برآورد رهن کامل','Estimated full deposit');
+  const breakdown = [
+    [t('ارزش روز ملک','Current market value'),amount(value)],
+    [t('معادل اجارهٔ ماهانه','Equivalent monthly rent'),amount(monthlyFromFull(median,rate))],
+    [rateLabel(),amount(rate)],
+    ...(values.length > 1 ? [[t('بازهٔ نمونه‌های واردشده','Range from entered comparables'),`${amount(low)} – ${amount(high)}`]] : []),
+    ...evidence
+  ];
+  const note = s.evidence === 'yield' ?
+    t('این برآورد از ارزش ملک × بازدهی سالانه ÷ ۱۲ و سپس تبدیل اجاره به رهن به دست آمده است. برای قرارداد، ضوابط محل و تاریخ را جداگانه بررسی کنید.','This estimate multiplies value by annual yield, divides by 12, then converts rent to a deposit. Check local rules and dates for the contract.') :
+    t('برای هر نمونه، نسبت اجارهٔ معادل به ارزش روز به ملک شما اعمال می‌شود. عدد اصلی میانهٔ نمونه‌هاست. این برآورد بازار است و اعتبارش به شباهت و تازگی نمونه‌ها بستگی دارد.','The equivalent rent-to-value ratio of each comparable is applied to your property. The headline number is the median. Its reliability depends on similarity and recency.');
+  const transfer = median > 0n && median <= LIMIT ? btn('use-valuation',t('انتقال به تبدیل رهن و اجاره','Use in the rent converter'),'quiet','arrows') : '';
+  show(metric(title,median,true) + breakdown.map(entry=>row(...entry)).join('') + `<p class="note">${note}</p>${transfer}`,
+    [withLabel(title,amount(median)), ...breakdown.map(entry=>withLabel(...entry)), note], { full:median, rate });
+}
+
+const calculators = {valuation,convert,renewal,fee,compare};
 function showSteps() {
   const steps = [
     [t('انتخاب محاسبه‌گر', 'Choose a calculator'), 'nav'],
@@ -576,6 +646,7 @@ async function exportResult(format) {
   const card = document.querySelector('.resultStage');
   const snapshot = card.cloneNode(true);
   snapshot.querySelector('.resultActions')?.remove();
+  snapshot.querySelector('[data-action=use-valuation]')?.remove();
   const brand = document.createElement('footer');
   brand.className = 'exportBrand';
   const credit = document.createElement('strong');
@@ -587,8 +658,9 @@ async function exportResult(format) {
   snapshot.append(brand);
   const sources = [...new Set([
     ...[...warnings.values()].map(({source}) => source),
-    ...(state.tab === 'fee' && state.fee.mode === 'official' ? [matchingTariff()?.source] : []),
-    ...(state.tab === 'fee' && state.fee.mode === 'tehran' ? [destination('tehran')] : [])
+    ...(state.tab === 'fee' && state.fee.mode === 'official' ? [destination('regulation')] : []),
+    ...(state.tab === 'fee' && state.fee.mode === 'tehran' ? [destination('tehran')] : []),
+    ...(state.tab === 'valuation' ? [destination('marketMethod'),destination('rentLaw')] : [])
   ].filter(Boolean))];
   if (sources.length) {
     const references = document.createElement('div');
@@ -620,16 +692,7 @@ function calculate() {
   report = null;
   $('workspace').querySelectorAll('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
   $('workspace').querySelectorAll('[id^=hint-]').forEach(note => note.textContent = '');
-  if ($('tariffStatus') && state.fee.loadedRate) {
-    const record = currentTariff();
-    if (!record || rateKey(record) !== state.fee.loadedRate) {
-      applyTariff();
-      syncTariffFields();
-      persist();
-    }
-  }
   calculators[state.tab]();
-  updateTariffStatus();
   const rateSummary = $('rateSummary');
   if (rateSummary) {
     const rate = money(state[state.tab].rate);
@@ -641,6 +704,7 @@ function calculate() {
   const empty = ({
     convert: state.convert.mode === 'split' ? t('برای شروع، مبلغ رهن کامل را در فرم بنویسید یا یکی از مبلغ‌های نمونه را بزنید.','Enter the full deposit or choose an example amount.') : t('پول پیش، اجاره یا هر دو را وارد کنید.','Enter the deposit, rent, or both.'),
     renewal: state.renewal.mode === 'target' ? t('پول پیش و اجارهٔ فعلی و درصد تغییر را وارد کنید.','Enter the current deposit, rent, and percentage change.') : t('پول پیش و اجارهٔ هر دو قرارداد را وارد کنید.','Enter the deposit and monthly rent for both contracts.'),
+    valuation: t('ارزش ملک، نرخ تبدیل و دادهٔ بازار را وارد کنید تا برآورد رهن نمایش داده شود.','Enter the property value, conversion rate and market evidence to see the estimate.'),
     fee: state.fee.mode === 'tehran' ? t('مبلغ معامله را بنویسید. سهم هر نفر همین‌جا نمایش داده می‌شود.','Enter your transaction amount to see each person’s share.') : t('مبلغ و نرخ لازم را در فرم وارد کنید تا سهم هر نفر مشخص شود.','Enter the amount and applicable rate to see each party’s share.'),
   })[state.tab];
   const compareEmpty = t('حداقل دو پیشنهاد را وارد کنید تا قابل مقایسه باشند.', 'Enter at least two offers to compare them.');
@@ -673,7 +737,6 @@ function inputsChanged(input) {
     working.offers[Number(index)][part] = raw;
   } else {
     working[fieldName] = raw;
-    if (state.tab === 'fee' && ['factor','cap'].includes(fieldName)) working.loadedRate = null;
     if (state.tab === 'convert' && working.mode === 'split' && ['deposit','rent'].includes(fieldName)) working.anchor = fieldName;
   }
   if (state.tab === 'convert' && fieldName === 'full') {
@@ -685,7 +748,6 @@ function inputsChanged(input) {
 $('workspace').addEventListener('input', event => {
   const input = event.target;
   if (event.isComposing) return;
-  if (input.id === 'in-county') updateCountyInput(input);
   if (input.matches('[data-field]')) inputsChanged(input);
   if (input.id === 'share') {
     state.convert.anchor = 'share';
@@ -695,7 +757,6 @@ $('workspace').addEventListener('input', event => {
   }
 });
 $('workspace').addEventListener('compositionend', event => {
-  if (event.target.id === 'in-county') updateCountyInput(event.target);
   if (event.target.matches('[data-field]')) inputsChanged(event.target);
 });
 $('workspace').addEventListener('beforeinput', event => {
@@ -788,15 +849,17 @@ document.addEventListener('click', event => {
       group.reverseDeposit = String(report.primary.deposit);
       group.reverseRent = String(report.primary.rent);
     }
+    if (state.tab === 'convert' && set === 'mode' && value === 'split' && group.mode !== value && report?.primary?.full <= LIMIT) {
+      group.full = String(report.primary.full);
+      group.anchor = 'share';
+    }
     if (state.tab === 'fee' && set === 'type' && group.type !== value) {
-      if (!group.loadedRate) group.tariffs[group.type] = { factor: group.factor, cap: group.cap };
-      group.loadedRate = null;
+      group.tariffs[group.type] = { factor: group.factor, cap: group.cap };
       const prior = group.tariffs[value];
       group.factor = prior?.factor ?? '';
       group.cap = prior?.cap ?? '';
     }
     group[set] = value;
-    if (state.tab === 'fee' && (set === 'type' || (set === 'mode' && value === 'official'))) applyTariff();
     if (state.tab === 'convert' && set === 'full') group.anchor = 'share';
     persist();
     updateView(`[data-set="${set}"][data-value="${value}"]`);
@@ -817,13 +880,23 @@ document.addEventListener('click', event => {
     }
     case 'reset': {
       const active = state.tab;
-      const rates = state.fee.localRates;
+      const archivedRates = state.fee.localRates;
       state[active] = structuredClone(initial[active]);
-      if (active === 'fee') state.fee.localRates = rates;
+      if (active === 'fee' && archivedRates) state.fee.localRates = archivedRates;
       persist();
       render();
       $('workspace').querySelector('[data-action=reset]').focus({ preventScroll:true });
       notify(t('فرم پاک شد. مبلغ‌های تازه را وارد کنید.','Form cleared. You can enter new amounts.'));
+      break;
+    }
+    case 'use-valuation': {
+      if (state.tab !== 'valuation' || !report?.primary || report.primary.full > LIMIT) break;
+      const { full, rate } = report.primary;
+      Object.assign(state.convert, { mode:'split', full:String(full), rate:String(rate), anchor:'share' });
+      state.tab = 'convert';
+      persist();
+      updateView('#in-full');
+      $('workspace').scrollIntoView({ block:'start' });
       break;
     }
     case 'reset-tehran':
@@ -891,49 +964,7 @@ document.addEventListener('click', event => {
       }
   }
 });
-$('workspace').addEventListener('submit', event => {
-  event.preventDefault();
-  if (event.target.id === 'countyForm') {
-    selectCounty($('in-county').value);
-    persist();
-    updateView('#in-county');
-    return;
-  }
-  if (event.target.id !== 'tariffForm') return;
-  const s = state.fee;
-  const error = $('tariffError');
-  const county = $('in-county').value.trim();
-  const source = httpsSource($('in-source').value.trim());
-  const from = tariffDate(normalize($('in-from').value));
-  const until = tariffDate(normalize($('in-until').value));
-  const factor = percentage(s.factor);
-  const cap = money(s.cap);
-  if (!county || factor === null || factor < 0n || factor > PERCENT || cap === null) {
-    error.textContent = t('برای ذخیره، نام شهرستان، درصد و سقف تعرفه را کامل کنید. سقف صفر فقط برای نرخنامه‌ای است که سقف آن واقعاً صفر است.', 'Enter the county, percentage, and fee cap. Enter zero only if the published cap is zero.');
-    return;
-  }
-  if (!source || !from || !until || from > until) {
-    error.textContent = t('لینک منبع و بازهٔ معتبر را وارد کنید. نمونهٔ تاریخ شمسی ۱۴۰۵/۰۱/۰۱ و نمونهٔ میلادی ۲۰۲۶-۰۳-۲۱ است.', 'Enter a source link starting with https:// and a valid date range, such as 2026-03-21.');
-    return;
-  }
-  const key = countyKey(county);
-  const type = tariffType(s.type);
-  s.localRates = s.localRates.filter(item=>item.key !== key || item.type !== type || item.until < from || item.from > until);
-  s.localRates.unshift({key,county,type,source,from,until,factor:s.factor,cap:s.cap});
-  s.county = county;
-  applyTariff();
-  persist();
-  updateView('#in-county');
-  notify(storageAvailable ? t('تعرفه ذخیره شد. در بازهٔ اعتبار خودکار بارگذاری می‌شود.','Tariff saved. It loads automatically during its validity period.') : t('تعرفه تا زمان باز بودن صفحه در دسترس است.','Tariff is available for this page session.'));
-});
-function updateCountyInput(input) {
-  if (countyKey(state.fee.county) === countyKey(input.value)) return;
-  selectCounty(input.value);
-  syncTariffFields();
-  persist();
-  calculate();
-}
-if (state.fee.loadedRate || (blank(state.fee.factor) && blank(state.fee.cap))) applyTariff();
+
 frame();
 render();
 

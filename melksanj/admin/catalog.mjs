@@ -1438,5 +1438,359 @@ export const catalog = [
     "section": "shared",
     "fa": "نتیجه و دریافت خروجی",
     "en": "Review and export"
+  },
+  {
+    "key": "[\"ضریب مصوب را از کجا بگیرم؟\",\"Where can I get the approved tariff?\"]",
+    "section": "fee",
+    "fa": "ضریب مصوب را از کجا بگیرم؟",
+    "en": "Where can I get the approved tariff?"
+  },
+  {
+    "key": "[\"برای شهرستان و نوع قرارداد خود، نرخنامهٔ معتبر را از اتحادیهٔ مشاوران املاک یا ادارهٔ صمت محل بگیرید. ضریب، سقف و تاریخ اعتبار را بررسی کنید. در قراردادهای مشمول، مبلغ ثبت‌شده در سامانه ملاک بررسی است.\",\"Request the tariff for your county and transaction type from the local real-estate union or industry and trade office. Check the coefficient, cap and effective dates. For covered transactions, verify the fee recorded in the registration system.\"]",
+    "section": "fee",
+    "fa": "برای شهرستان و نوع قرارداد خود، نرخنامهٔ معتبر را از اتحادیهٔ مشاوران املاک یا ادارهٔ صمت محل بگیرید. ضریب، سقف و تاریخ اعتبار را بررسی کنید. در قراردادهای مشمول، مبلغ ثبت‌شده در سامانه ملاک بررسی است.",
+    "en": "Request the tariff for your county and transaction type from the local real-estate union or industry and trade office. Check the coefficient, cap and effective dates. For covered transactions, verify the fee recorded in the registration system."
+  },
+  {
+    "key": "[\"درگاه رسمی کاتب\",\"Official Kateb portal\"]",
+    "section": "fee",
+    "fa": "درگاه رسمی کاتب",
+    "en": "Official Kateb portal"
+  },
+  {
+    "key": "[\"مادهٔ ۷ آیین‌نامه و مبنای تعرفه\",\"Article 7 and the tariff basis\"]",
+    "section": "fee",
+    "fa": "مادهٔ ۷ آیین‌نامه و مبنای تعرفه",
+    "en": "Article 7 and the tariff basis"
+  },
+  {
+    "key": "[\"متن نرخنامهٔ مرجع تهران · ۱۳۹۹\",\"Tehran reference schedule · 1399\"]",
+    "section": "fee",
+    "fa": "متن نرخنامهٔ مرجع تهران · ۱۳۹۹",
+    "en": "Tehran reference schedule · 1399"
+  },
+  {
+    "key": "[\"نمونهٔ محاسبه با نرخنامهٔ پیشین تهران\",\"Example using the earlier Tehran tariff\"]",
+    "section": "fee",
+    "fa": "نمونهٔ محاسبه با نرخنامهٔ پیشین تهران",
+    "en": "Example using the earlier Tehran tariff"
+  },
+  {
+    "key": "[\"برای معاملهٔ فعلی، اعتبار نرخ و سقف را از مرجع محل بررسی کنید.\",\"Confirm the current fee and cap with the local authority for your transaction.\"]",
+    "section": "fee",
+    "fa": "برای معاملهٔ فعلی، اعتبار نرخ و سقف را از مرجع محل بررسی کنید.",
+    "en": "Confirm the current fee and cap with the local authority for your transaction."
+  },
+  {
+    "key": "[\"با ضریب استعلام‌شده\",\"Use a confirmed coefficient\"]",
+    "section": "fee",
+    "fa": "با ضریب استعلام‌شده",
+    "en": "Use a confirmed coefficient"
+  },
+  {
+    "key": "[\"نمونهٔ تهران\",\"Tehran example\"]",
+    "section": "fee",
+    "fa": "نمونهٔ تهران",
+    "en": "Tehran example"
+  },
+  {
+    "key": "[\"ضریب نرخنامه برای مجموع دو طرف را به درصد وارد کنید. اگر ضریب به‌صورت عدد اعشاری اعلام شده، ابتدا آن را در ۱۰۰ ضرب کنید.\",\"Enter the combined coefficient as a percentage. If the tariff gives a decimal multiplier, multiply it by 100.\"]",
+    "section": "fee",
+    "fa": "ضریب نرخنامه برای مجموع دو طرف را به درصد وارد کنید. اگر ضریب به‌صورت عدد اعشاری اعلام شده، ابتدا آن را در ۱۰۰ ضرب کنید.",
+    "en": "Enter the combined coefficient as a percentage. If the tariff gives a decimal multiplier, multiply it by 100."
+  },
+  {
+    "key": "[\"اگر بنگاه به شما درصدی گفته، آن را وارد کنید تا مبلغ تقریبی را ببینید. برای بررسی تعرفه، حالت «با ضریب استعلام‌شده» را انتخاب کنید.\",\"Enter the percentage quoted by the agent to see an estimate. Use the confirmed-coefficient option to check the tariff.\"]",
+    "section": "fee",
+    "fa": "اگر بنگاه به شما درصدی گفته، آن را وارد کنید تا مبلغ تقریبی را ببینید. برای بررسی تعرفه، حالت «با ضریب استعلام‌شده» را انتخاب کنید.",
+    "en": "Enter the percentage quoted by the agent to see an estimate. Use the confirmed-coefficient option to check the tariff."
+  },
+  {
+    "key": "[\"متر مربع\",\"m²\"]",
+    "section": "valuation",
+    "fa": "متر مربع",
+    "en": "m²"
+  },
+  {
+    "key": "[\"روش ورود ارزش ملک\",\"Property value input\"]",
+    "section": "valuation",
+    "fa": "روش ورود ارزش ملک",
+    "en": "Property value input"
+  },
+  {
+    "key": "[\"ارزش کل ملک\",\"Total property value\"]",
+    "section": "valuation",
+    "fa": "ارزش کل ملک",
+    "en": "Total property value"
+  },
+  {
+    "key": "[\"متراژ × قیمت هر متر\",\"Area × price per m²\"]",
+    "section": "valuation",
+    "fa": "متراژ × قیمت هر متر",
+    "en": "Area × price per m²"
+  },
+  {
+    "key": "[\"ارزش روز ملک\",\"Current market value\"]",
+    "section": "valuation",
+    "fa": "ارزش روز ملک",
+    "en": "Current market value"
+  },
+  {
+    "key": "[\"متراژ مفید\",\"Usable area\"]",
+    "section": "valuation",
+    "fa": "متراژ مفید",
+    "en": "Usable area"
+  },
+  {
+    "key": "[\"قیمت بازار هر متر مربع\",\"Market price per m²\"]",
+    "section": "valuation",
+    "fa": "قیمت بازار هر متر مربع",
+    "en": "Market price per m²"
+  },
+  {
+    "key": "[\"مبنای برآورد\",\"Estimation basis\"]",
+    "section": "valuation",
+    "fa": "مبنای برآورد",
+    "en": "Estimation basis"
+  },
+  {
+    "key": "[\"قراردادهای قابل‌مقایسه\",\"Comparable leases\"]",
+    "section": "valuation",
+    "fa": "قراردادهای قابل‌مقایسه",
+    "en": "Comparable leases"
+  },
+  {
+    "key": "[\"بازدهی سالانهٔ محله\",\"Local annual yield\"]",
+    "section": "valuation",
+    "fa": "بازدهی سالانهٔ محله",
+    "en": "Local annual yield"
+  },
+  {
+    "key": "[\"بازدهی ناخالص سالانهٔ اجاره\",\"Gross annual rental yield\"]",
+    "section": "valuation",
+    "fa": "بازدهی ناخالص سالانهٔ اجاره",
+    "en": "Gross annual rental yield"
+  },
+  {
+    "key": "[\"درصد را از داده‌های معتبر محله بگیرید. بازدهی ناخالص یعنی اجارهٔ معادل یک سال تقسیم بر ارزش روز ملک.\",\"Use a reliable local figure. Gross yield is one year of equivalent rent divided by the property’s market value.\"]",
+    "section": "valuation",
+    "fa": "درصد را از داده‌های معتبر محله بگیرید. بازدهی ناخالص یعنی اجارهٔ معادل یک سال تقسیم بر ارزش روز ملک.",
+    "en": "Use a reliable local figure. Gross yield is one year of equivalent rent divided by the property’s market value."
+  },
+  {
+    "key": "[\"تا سه قرارداد نزدیک به ملک خود وارد کنید. برای هر نمونه، ارزش روز همان ملک و دست‌کم یکی از مبلغ‌های پول پیش یا اجاره را وارد کنید.\",\"Add up to three nearby comparable leases. For each, enter that property’s market value and at least one of the deposit or rent amounts.\"]",
+    "section": "valuation",
+    "fa": "تا سه قرارداد نزدیک به ملک خود وارد کنید. برای هر نمونه، ارزش روز همان ملک و دست‌کم یکی از مبلغ‌های پول پیش یا اجاره را وارد کنید.",
+    "en": "Add up to three nearby comparable leases. For each, enter that property’s market value and at least one of the deposit or rent amounts."
+  },
+  {
+    "key": "[\"ملک مشابه\",\"Comparable property\"]",
+    "section": "valuation",
+    "fa": "ملک مشابه",
+    "en": "Comparable property"
+  },
+  {
+    "key": "[\"ارزش روز ملک مشابه\",\"Comparable market value\"]",
+    "section": "valuation",
+    "fa": "ارزش روز ملک مشابه",
+    "en": "Comparable market value"
+  },
+  {
+    "key": "[\"تعدیل اختلاف کیفیت و شرایط\",\"Adjust for quality and terms\"]",
+    "section": "valuation",
+    "fa": "تعدیل اختلاف کیفیت و شرایط",
+    "en": "Adjust for quality and terms"
+  },
+  {
+    "key": "[\"تعدیل برآورد برای ملک شما\",\"Adjustment for your property\"]",
+    "section": "valuation",
+    "fa": "تعدیل برآورد برای ملک شما",
+    "en": "Adjustment for your property"
+  },
+  {
+    "key": "[\"اختیاری. فقط با شواهد بازار وارد کنید؛ مثبت برای ملک شما که اجاره‌پذیری بالاتری دارد، منفی برای پایین‌تر. متراژ و ارزش ملک را دوباره در تعدیل حساب نکنید.\",\"Optional. Use market evidence: positive when your property commands more rent, negative when it commands less. Avoid double-counting area or value.\"]",
+    "section": "valuation",
+    "fa": "اختیاری. فقط با شواهد بازار وارد کنید؛ مثبت برای ملک شما که اجاره‌پذیری بالاتری دارد، منفی برای پایین‌تر. متراژ و ارزش ملک را دوباره در تعدیل حساب نکنید.",
+    "en": "Optional. Use market evidence: positive when your property commands more rent, negative when it commands less. Avoid double-counting area or value."
+  },
+  {
+    "key": "[\"ارزش ملک من چقدر رهن می‌دهد؟\",\"What full deposit does this property support?\"]",
+    "section": "valuation",
+    "fa": "ارزش ملک من چقدر رهن می‌دهد؟",
+    "en": "What full deposit does this property support?"
+  },
+  {
+    "key": "[\"یک برآورد قابل‌مقایسه برای مذاکره، با فرض‌ها و داده‌هایی که خودت وارد می‌کنی.\",\"Build a negotiation estimate from market evidence and your own assumptions.\"]",
+    "section": "valuation",
+    "fa": "یک برآورد قابل‌مقایسه برای مذاکره، با فرض‌ها و داده‌هایی که خودت وارد می‌کنی.",
+    "en": "Build a negotiation estimate from market evidence and your own assumptions."
+  },
+  {
+    "key": "[\"ارزش ملک شما\",\"Your property value\"]",
+    "section": "valuation",
+    "fa": "ارزش ملک شما",
+    "en": "Your property value"
+  },
+  {
+    "key": "[\"شواهد بازار\",\"Market evidence\"]",
+    "section": "valuation",
+    "fa": "شواهد بازار",
+    "en": "Market evidence"
+  },
+  {
+    "key": "[\"نرخ تبدیل توافقی\",\"Agreed conversion rate\"]",
+    "section": "valuation",
+    "fa": "نرخ تبدیل توافقی",
+    "en": "Agreed conversion rate"
+  },
+  {
+    "key": "[\"نرخ ماهانه برای تبدیل هر یک میلیون تومان پول پیش به اجاره. مقدار اولیه صرفاً نمونه و قابل‌تغییر است.\",\"Monthly rent equivalent for one million toman of deposit. The initial value is an editable example.\"]",
+    "section": "valuation",
+    "fa": "نرخ ماهانه برای تبدیل هر یک میلیون تومان پول پیش به اجاره. مقدار اولیه صرفاً نمونه و قابل‌تغییر است.",
+    "en": "Monthly rent equivalent for one million toman of deposit. The initial value is an editable example."
+  },
+  {
+    "key": "[\"چطور نمونهٔ بهتر انتخاب کنم؟\",\"How do I choose better comparables?\"]",
+    "section": "valuation",
+    "fa": "چطور نمونهٔ بهتر انتخاب کنم؟",
+    "en": "How do I choose better comparables?"
+  },
+  {
+    "key": "[\"قراردادهای تازه و ترجیحاً قطعیِ همان محله را انتخاب کنید. متراژ، سن و وضعیت بنا، طبقه، آسانسور و پارکینگ، دسترسی به خدمات و مدت و شرایط قرارداد را مقایسه کنید. قیمت آگهی ممکن است با معاملهٔ نهایی فرق داشته باشد.\",\"Prefer recent, completed leases in the same neighborhood. Compare size, age and condition, floor, lift and parking, local services, and lease terms. Asking prices can differ from signed deals.\"]",
+    "section": "valuation",
+    "fa": "قراردادهای تازه و ترجیحاً قطعیِ همان محله را انتخاب کنید. متراژ، سن و وضعیت بنا، طبقه، آسانسور و پارکینگ، دسترسی به خدمات و مدت و شرایط قرارداد را مقایسه کنید. قیمت آگهی ممکن است با معاملهٔ نهایی فرق داشته باشد.",
+    "en": "Prefer recent, completed leases in the same neighborhood. Compare size, age and condition, floor, lift and parking, local services, and lease terms. Asking prices can differ from signed deals."
+  },
+  {
+    "key": "[\"مادهٔ ۸ قانون بازار اجاره\",\"Rental market law, Article 8\"]",
+    "section": "valuation",
+    "fa": "مادهٔ ۸ قانون بازار اجاره",
+    "en": "Rental market law, Article 8"
+  },
+  {
+    "key": "[\"روش ارزیابی مقایسه‌ای RICS\",\"RICS comparable evidence standard\"]",
+    "section": "valuation",
+    "fa": "روش ارزیابی مقایسه‌ای RICS",
+    "en": "RICS comparable evidence standard"
+  },
+  {
+    "key": "[\"رهن کامل از بیشینهٔ مبلغ قابل ورود بیشتر است.\",\"The full deposit exceeds the maximum supported amount.\"]",
+    "section": "convert",
+    "fa": "رهن کامل از بیشینهٔ مبلغ قابل ورود بیشتر است.",
+    "en": "The full deposit exceeds the maximum supported amount."
+  },
+  {
+    "key": "[\"با انتخاب «اجاره‌ام چقدر می‌شود؟» همین رهن کامل وارد فرم می‌شود.\",\"Switch to “How much is the rent?” to use this full-deposit amount.\"]",
+    "section": "convert",
+    "fa": "با انتخاب «اجاره‌ام چقدر می‌شود؟» همین رهن کامل وارد فرم می‌شود.",
+    "en": "Switch to “How much is the rent?” to use this full-deposit amount."
+  },
+  {
+    "key": "[\"ارزش ملک باید مثبت و حداکثر ۱۵ رقم باشد.\",\"Property value must be positive and at most 15 digits.\"]",
+    "section": "valuation",
+    "fa": "ارزش ملک باید مثبت و حداکثر ۱۵ رقم باشد.",
+    "en": "Property value must be positive and at most 15 digits."
+  },
+  {
+    "key": "[\"بازدهی ناخالص سالانهٔ واردشده\",\"Entered gross annual yield\"]",
+    "section": "valuation",
+    "fa": "بازدهی ناخالص سالانهٔ واردشده",
+    "en": "Entered gross annual yield"
+  },
+  {
+    "key": "[\"برای هر نمونه، ارزش روزِ مثبت وارد کنید.\",\"Enter a positive market value for each comparable.\"]",
+    "section": "valuation",
+    "fa": "برای هر نمونه، ارزش روزِ مثبت وارد کنید.",
+    "en": "Enter a positive market value for each comparable."
+  },
+  {
+    "key": "[\"پول پیش یا اجارهٔ این نمونه را وارد کنید.\",\"Enter this comparable’s deposit or rent.\"]",
+    "section": "valuation",
+    "fa": "پول پیش یا اجارهٔ این نمونه را وارد کنید.",
+    "en": "Enter this comparable’s deposit or rent."
+  },
+  {
+    "key": "[\"پول پیش و اجاره نمی‌توانند هر دو صفر باشند.\",\"Deposit and rent cannot both be zero.\"]",
+    "section": "valuation",
+    "fa": "پول پیش و اجاره نمی‌توانند هر دو صفر باشند.",
+    "en": "Deposit and rent cannot both be zero."
+  },
+  {
+    "key": "[\"برآورد از ملک مشابه\",\"Estimate from comparable\"]",
+    "section": "valuation",
+    "fa": "برآورد از ملک مشابه",
+    "en": "Estimate from comparable"
+  },
+  {
+    "key": "[\"ارزش روز نمونه\",\"Comparable market value\"]",
+    "section": "valuation",
+    "fa": "ارزش روز نمونه",
+    "en": "Comparable market value"
+  },
+  {
+    "key": "[\"نمونه\",\"Comparable\"]",
+    "section": "valuation",
+    "fa": "نمونه",
+    "en": "Comparable"
+  },
+  {
+    "key": "[\"تعدیل نمونه\",\"Comparable adjustment\"]",
+    "section": "valuation",
+    "fa": "تعدیل نمونه",
+    "en": "Comparable adjustment"
+  },
+  {
+    "key": "[\"برآورد رهن کامل\",\"Estimated full deposit\"]",
+    "section": "valuation",
+    "fa": "برآورد رهن کامل",
+    "en": "Estimated full deposit"
+  },
+  {
+    "key": "[\"معادل اجارهٔ ماهانه\",\"Equivalent monthly rent\"]",
+    "section": "valuation",
+    "fa": "معادل اجارهٔ ماهانه",
+    "en": "Equivalent monthly rent"
+  },
+  {
+    "key": "[\"بازهٔ نمونه‌های واردشده\",\"Range from entered comparables\"]",
+    "section": "valuation",
+    "fa": "بازهٔ نمونه‌های واردشده",
+    "en": "Range from entered comparables"
+  },
+  {
+    "key": "[\"این برآورد از ارزش ملک × بازدهی سالانه ÷ ۱۲ و سپس تبدیل اجاره به رهن به دست آمده است. برای قرارداد، ضوابط محل و تاریخ را جداگانه بررسی کنید.\",\"This estimate multiplies value by annual yield, divides by 12, then converts rent to a deposit. Check local rules and dates for the contract.\"]",
+    "section": "valuation",
+    "fa": "این برآورد از ارزش ملک × بازدهی سالانه ÷ ۱۲ و سپس تبدیل اجاره به رهن به دست آمده است. برای قرارداد، ضوابط محل و تاریخ را جداگانه بررسی کنید.",
+    "en": "This estimate multiplies value by annual yield, divides by 12, then converts rent to a deposit. Check local rules and dates for the contract."
+  },
+  {
+    "key": "[\"برای هر نمونه، نسبت اجارهٔ معادل به ارزش روز به ملک شما اعمال می‌شود. عدد اصلی میانهٔ نمونه‌هاست. این برآورد بازار است و اعتبارش به شباهت و تازگی نمونه‌ها بستگی دارد.\",\"The equivalent rent-to-value ratio of each comparable is applied to your property. The headline number is the median. Its reliability depends on similarity and recency.\"]",
+    "section": "valuation",
+    "fa": "برای هر نمونه، نسبت اجارهٔ معادل به ارزش روز به ملک شما اعمال می‌شود. عدد اصلی میانهٔ نمونه‌هاست. این برآورد بازار است و اعتبارش به شباهت و تازگی نمونه‌ها بستگی دارد.",
+    "en": "The equivalent rent-to-value ratio of each comparable is applied to your property. The headline number is the median. Its reliability depends on similarity and recency."
+  },
+  {
+    "key": "[\"انتقال به تبدیل رهن و اجاره\",\"Use in the rent converter\"]",
+    "section": "valuation",
+    "fa": "انتقال به تبدیل رهن و اجاره",
+    "en": "Use in the rent converter"
+  },
+  {
+    "key": "[\"برآورد رهن ملک\",\"Estimate full deposit\"]",
+    "section": "shared",
+    "fa": "برآورد رهن ملک",
+    "en": "Estimate full deposit"
+  },
+  {
+    "key": "[\"دریافت فایل\",\"Download result\"]",
+    "section": "shared",
+    "fa": "دریافت فایل",
+    "en": "Download result"
+  },
+  {
+    "key": "[\"نگه‌داشتن نتیجه\",\"Keep result\"]",
+    "section": "shared",
+    "fa": "نگه‌داشتن نتیجه",
+    "en": "Keep result"
   }
 ];

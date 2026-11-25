@@ -1,7 +1,7 @@
 import { commission, growthPercent, PERCENT } from './math.mjs';
 
 export const tehranReference = {
-  source: 'https://www.tasnimnews.ir/fa/news/1405/04/02/3624201/%D8%AA%D9%85%D8%AF%DB%8C%D8%AF-%D8%AE%D9%88%D8%AF%DA%A9%D8%A7%D8%B1-%D9%82%D8%B1%D8%A7%D8%B1%D8%AF%D8%A7%D8%AF%D9%87%D8%A7%DB%8C-%D8%A7%D8%AC%D8%A7%D8%B1%D9%87-%D8%A8%D8%A7-%D8%B3%D9%82%D9%81-25-%D8%AF%D8%B1%D8%B5%D8%AF-%D8%A8%D9%87-%D8%AA%D8%B5%D9%88%DB%8C%D8%A8-%D8%B3%D8%B1%D8%A7%D9%86-%D9%82%D9%88%D8%A7-%D8%B1%D8%B3%DB%8C%D8%AF/amp',
+  source: 'https://online.flipbuilder.com/wocsy/nsxj/files/basic-html/page32.html',
   sale: '0.25', deposit: '0.5', rent: '25', vat: '10', cap: null
 };
 

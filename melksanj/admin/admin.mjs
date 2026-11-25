@@ -10,7 +10,7 @@ const labels = {
   passwordLabel:['رمز ورود','Password'], loginButton:['ورود','Sign in'],
   editorTitle:['مدیریت سایت','Manage site'], publish:['انتشار تغییرات','Publish changes'],
   previewTitle:['پیش‌نمایش زنده','Live preview'], appearance:['ظاهر و قلم','Appearance and fonts'],
-  header:['سربرگ و منو','Header and navigation'], convert:['رهن و اجاره','Deposit and rent'],
+  header:['سربرگ و منو','Header and navigation'], valuation:['برآورد رهن ملک','Deposit estimation'], convert:['رهن و اجاره','Deposit and rent'],
   renewal:['تمدید قرارداد','Renewal'], fee:['کمیسیون','Agent fees'], compare:['مقایسه','Comparison'],
   shared:['فرم‌ها و پیام‌ها','Forms and messages'], history:['سوابق و اعلان‌ها','History and notices'],
   guide:['راهنما و منابع','Guide and sources'], footer:['فوتر و ارتباط','Footer and contact'],
@@ -33,8 +33,8 @@ const labels = {
   invalidContent:['مقدار یکی از فیلدها قابل ذخیره نیست.','One of the values cannot be saved.'],
   reset:['پیش‌فرض','Default'], lighterColors:['رنگ‌های حالت روشن','Light theme colors'], darkerColors:['رنگ‌های حالت تیره','Dark theme colors']
 };
-const sections = ['appearance','header','convert','renewal','fee','compare','shared','history','guide','footer','links','security'];
-const liveTabs = new Set(['convert','renewal','fee','compare']);
+const sections = ['appearance','header','convert','valuation','renewal','fee','compare','shared','history','guide','footer','links','security'];
+const liveTabs = new Set(['convert','renewal','fee','compare','valuation']);
 const defaults = () => ({ text: {}, links: {}, theme: { light: {}, dark: {} }, appearance: {} });
 let lang = new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'fa';
 let selected = 'appearance';
