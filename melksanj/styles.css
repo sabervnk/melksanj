@@ -292,7 +292,6 @@ body {font-family:var(--cms-font,Vazirmatn,system-ui,sans-serif)}
 #workspace:has(.resultActions [data-action=export-png]:enabled) .jumpResult{display:inline-flex;margin-top:16px}
 
 .nav{grid-template-columns:repeat(5,minmax(0,1fr))}
-.nav button[data-tab=valuation]{border-color:var(--edge)}
 .tariffSources{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:14px;border:1px solid var(--warmEdge);border-radius:16px;background:var(--mint);margin-block:14px}
 .sourceEmblem{display:grid;place-items:center;width:35px;height:35px;border-radius:12px;background:var(--paper);color:var(--accent)}
 .tariffSources h3{font-size:.94rem;color:var(--mintText)}
@@ -325,3 +324,20 @@ body {font-family:var(--cms-font,Vazirmatn,system-ui,sans-serif)}
   .nav button:nth-last-child(-n+2){grid-column:span 3}
 }
 @media(max-width:340px){.resultToolbar .icon{display:none}}
+
+.offerAmenities{margin-block-start:12px;border-block-start:1px solid var(--edge);padding-block-start:10px}
+.offerAmenities summary{display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--mintText);font-size:.83rem}
+.offerAmenities summary::-webkit-details-marker{display:none}
+.offerAmenities summary::after{content:'';inline-size:7px;block-size:7px;border-inline-end:2px solid currentColor;border-block-end:2px solid currentColor;transform:rotate(45deg);margin-inline-start:auto;margin-inline-end:4px}
+.offerAmenities[open] summary::after{transform:rotate(225deg)}
+.offerAmenities summary .icon{width:17px;height:17px}
+.offerAmenities summary small{color:var(--muted);font-size:.72rem}
+.offerAmenities .help{margin-block:7px 10px}
+.amenityFields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.amenityField{display:grid;align-content:start;gap:4px;min-inline-size:0;color:var(--sub);font-size:.77rem;font-weight:720}
+.amenityField :is(input,select,textarea){inline-size:100%;min-inline-size:0;min-block-size:36px;padding:5px 7px;border:1px solid var(--edge);border-radius:9px;background:var(--paper);color:var(--ink);font:inherit}
+.amenityNotes{margin-block-start:9px}
+.amenityNotes textarea{min-block-size:60px;resize:vertical}
+.amenityResult{margin-block-start:12px;padding-block-start:9px;border-block-start:1px solid var(--edge)}
+.compareResult .amenityResult h4{color:var(--mintText);font-size:.84rem}
+.amenityResult .row b{white-space:pre-wrap}

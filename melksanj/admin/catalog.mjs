@@ -1810,5 +1810,203 @@ export const catalog = [
     "section": "renewal",
     "fa": "ورود به سامانهٔ خودنویس",
     "en": "Open Khodnevis"
+  },
+  {
+    "key": "[\"دارد\",\"Yes\"]",
+    "section": "compare",
+    "fa": "دارد",
+    "en": "Yes"
+  },
+  {
+    "key": "[\"ندارد\",\"No\"]",
+    "section": "compare",
+    "fa": "ندارد",
+    "en": "No"
+  },
+  {
+    "key": "[\"داخل محدوده\",\"Inside\"]",
+    "section": "compare",
+    "fa": "داخل محدوده",
+    "en": "Inside"
+  },
+  {
+    "key": "[\"خارج از محدوده\",\"Outside\"]",
+    "section": "compare",
+    "fa": "خارج از محدوده",
+    "en": "Outside"
+  },
+  {
+    "key": "[\"شمالی\",\"North-facing\"]",
+    "section": "compare",
+    "fa": "شمالی",
+    "en": "North-facing"
+  },
+  {
+    "key": "[\"جنوبی\",\"South-facing\"]",
+    "section": "compare",
+    "fa": "جنوبی",
+    "en": "South-facing"
+  },
+  {
+    "key": "[\"تعداد پارکینگ\",\"Parking spaces\"]",
+    "section": "compare",
+    "fa": "تعداد پارکینگ",
+    "en": "Parking spaces"
+  },
+  {
+    "key": "[\"نوع پارکینگ\",\"Parking arrangement\"]",
+    "section": "compare",
+    "fa": "نوع پارکینگ",
+    "en": "Parking arrangement"
+  },
+  {
+    "key": "[\"مستقل\",\"Independent\"]",
+    "section": "compare",
+    "fa": "مستقل",
+    "en": "Independent"
+  },
+  {
+    "key": "[\"مزاحم\",\"Tandem\"]",
+    "section": "compare",
+    "fa": "مزاحم",
+    "en": "Tandem"
+  },
+  {
+    "key": "[\"مستقل و مزاحم\",\"Independent and tandem\"]",
+    "section": "compare",
+    "fa": "مستقل و مزاحم",
+    "en": "Independent and tandem"
+  },
+  {
+    "key": "[\"انباری\",\"Storage room\"]",
+    "section": "compare",
+    "fa": "انباری",
+    "en": "Storage room"
+  },
+  {
+    "key": "[\"آسانسور\",\"Elevator\"]",
+    "section": "compare",
+    "fa": "آسانسور",
+    "en": "Elevator"
+  },
+  {
+    "key": "[\"نفربر\",\"Passenger\"]",
+    "section": "compare",
+    "fa": "نفربر",
+    "en": "Passenger"
+  },
+  {
+    "key": "[\"باربر\",\"Freight\"]",
+    "section": "compare",
+    "fa": "باربر",
+    "en": "Freight"
+  },
+  {
+    "key": "[\"نفربر و باربر\",\"Passenger and freight\"]",
+    "section": "compare",
+    "fa": "نفربر و باربر",
+    "en": "Passenger and freight"
+  },
+  {
+    "key": "[\"بالکن\",\"Balcony\"]",
+    "section": "compare",
+    "fa": "بالکن",
+    "en": "Balcony"
+  },
+  {
+    "key": "[\"جهت ساختمان\",\"Building orientation\"]",
+    "section": "compare",
+    "fa": "جهت ساختمان",
+    "en": "Building orientation"
+  },
+  {
+    "key": "[\"جهت واحد\",\"Unit orientation\"]",
+    "section": "compare",
+    "fa": "جهت واحد",
+    "en": "Unit orientation"
+  },
+  {
+    "key": "[\"شرقی\",\"East-facing\"]",
+    "section": "compare",
+    "fa": "شرقی",
+    "en": "East-facing"
+  },
+  {
+    "key": "[\"غربی\",\"West-facing\"]",
+    "section": "compare",
+    "fa": "غربی",
+    "en": "West-facing"
+  },
+  {
+    "key": "[\"دوبر\",\"Dual aspect\"]",
+    "section": "compare",
+    "fa": "دوبر",
+    "en": "Dual aspect"
+  },
+  {
+    "key": "[\"سن بنا (سال)\",\"Building age (years)\"]",
+    "section": "compare",
+    "fa": "سن بنا (سال)",
+    "en": "Building age (years)"
+  },
+  {
+    "key": "[\"بازسازی‌شده\",\"Renovated\"]",
+    "section": "compare",
+    "fa": "بازسازی‌شده",
+    "en": "Renovated"
+  },
+  {
+    "key": "[\"طرح ترافیک اصلی\",\"Main traffic zone\"]",
+    "section": "compare",
+    "fa": "طرح ترافیک اصلی",
+    "en": "Main traffic zone"
+  },
+  {
+    "key": "[\"طرح کنترل آلودگی هوا\",\"Air pollution control zone\"]",
+    "section": "compare",
+    "fa": "طرح کنترل آلودگی هوا",
+    "en": "Air pollution control zone"
+  },
+  {
+    "key": "[\"نامشخص\",\"Unspecified\"]",
+    "section": "compare",
+    "fa": "نامشخص",
+    "en": "Unspecified"
+  },
+  {
+    "key": "[\"مشخصات و امکانات ملک\",\"Property details and amenities\"]",
+    "section": "compare",
+    "fa": "مشخصات و امکانات ملک",
+    "en": "Property details and amenities"
+  },
+  {
+    "key": "[\"اختیاری\",\"Optional\"]",
+    "section": "compare",
+    "fa": "اختیاری",
+    "en": "Optional"
+  },
+  {
+    "key": "[\"برای مقایسهٔ امکانات، هر موردی را که می‌دانید تکمیل کنید. هزینه‌ها جداگانه محاسبه می‌شوند.\",\"Fill in the details you know to compare amenities. Costs are calculated separately.\"]",
+    "section": "compare",
+    "fa": "برای مقایسهٔ امکانات، هر موردی را که می‌دانید تکمیل کنید. هزینه‌ها جداگانه محاسبه می‌شوند.",
+    "en": "Fill in the details you know to compare amenities. Costs are calculated separately."
+  },
+  {
+    "key": "[\"یادداشت ملک\",\"Property notes\"]",
+    "section": "compare",
+    "fa": "یادداشت ملک",
+    "en": "Property notes"
+  },
+  {
+    "key": "[\"مثلاً طبقهٔ سوم، نور خوب، نزدیک مترو\",\"e.g. Third floor, good light, near metro\"]",
+    "section": "compare",
+    "fa": "مثلاً طبقهٔ سوم، نور خوب، نزدیک مترو",
+    "en": "e.g. Third floor, good light, near metro"
+  },
+  {
+    "key": "[\"مشخصات ملک\",\"Property details\"]",
+    "section": "compare",
+    "fa": "مشخصات ملک",
+    "en": "Property details"
   }
 ];

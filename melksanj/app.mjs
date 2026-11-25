@@ -291,6 +291,74 @@ function renderValuation() {
     </div>`) + panel();
 }
 
+function amenityFields() {
+  const yesNo = [['yes',t('دارد','Yes')],['no',t('ندارد','No')]];
+  const zones = [['inside',t('داخل محدوده','Inside')],['outside',t('خارج از محدوده','Outside')]];
+  const orientation = [['north',t('شمالی','North-facing')],['south',t('جنوبی','South-facing')]];
+  return [
+    { key:'parking', label:t('تعداد پارکینگ','Parking spaces'), max:99 },
+    { key:'parkingType', label:t('نوع پارکینگ','Parking arrangement'), options:[
+      ['independent',t('مستقل','Independent')],['tandem',t('مزاحم','Tandem')],['mixed',t('مستقل و مزاحم','Independent and tandem')]
+    ] },
+    { key:'storage', label:t('انباری','Storage room'), options:yesNo },
+    { key:'lift', label:t('آسانسور','Elevator'), options:[
+      ['none',t('ندارد','No')],['passenger',t('نفربر','Passenger')],['freight',t('باربر','Freight')],['both',t('نفربر و باربر','Passenger and freight')]
+    ] },
+    { key:'balcony', label:t('بالکن','Balcony'), options:yesNo },
+    { key:'building', label:t('جهت ساختمان','Building orientation'), options:orientation },
+    { key:'unit', label:t('جهت واحد','Unit orientation'), options:[
+      ...orientation,['east',t('شرقی','East-facing')],['west',t('غربی','West-facing')],['dual',t('دوبر','Dual aspect')]
+    ] },
+    { key:'age', label:t('سن بنا (سال)','Building age (years)'), max:999 },
+    { key:'renovated', label:t('بازسازی‌شده','Renovated'), options:yesNo },
+    { key:'traffic', label:t('طرح ترافیک اصلی','Main traffic zone'), options:zones },
+    { key:'air', label:t('طرح کنترل آلودگی هوا','Air pollution control zone'), options:zones }
+  ];
+}
+
+function offerAmenities(offer, index) {
+  const amenities = offer.amenities ?? {};
+  const inputs = amenityFields().map(({ key, label, max, options }) => {
+    const attributes = `id="amenity-${index}-${key}" data-amenity="${key}" data-offer="${index}"`;
+    const current = amenities[key] ?? '';
+    const control = options ? `<select ${attributes}>
+      <option value="">${t('نامشخص','Unspecified')}</option>
+      ${options.map(([value,text])=>`<option value="${value}" ${current === value ? 'selected' : ''}>${text}</option>`).join('')}
+    </select>` : `<input ${attributes} type="text" inputmode="numeric" maxlength="${String(max).length}"
+      value="${escape(current)}" placeholder="—">`;
+    return `<label class="amenityField"><span>${label}</span>${control}</label>`;
+  }).join('');
+  return `<details class="offerAmenities">
+    <summary>${icon('house')}<strong>${t('مشخصات و امکانات ملک','Property details and amenities')}</strong><small>${t('اختیاری','Optional')}</small></summary>
+    <p class="help">${t('برای مقایسهٔ امکانات، هر موردی را که می‌دانید تکمیل کنید. هزینه‌ها جداگانه محاسبه می‌شوند.','Fill in the details you know to compare amenities. Costs are calculated separately.')}</p>
+    <div class="amenityFields">${inputs}</div>
+    <label class="amenityField amenityNotes"><span>${t('یادداشت ملک','Property notes')}</span>
+      <textarea id="amenity-${index}-notes" data-amenity="notes" data-offer="${index}" maxlength="180"
+        placeholder="${t('مثلاً طبقهٔ سوم، نور خوب، نزدیک مترو','e.g. Third floor, good light, near metro')}">${escape(amenities.notes ?? '')}</textarea>
+    </label>
+  </details>`;
+}
+
+function amenityRows(offer) {
+  const amenities = offer.amenities ?? {};
+  const entries = [];
+  for (const { key, label, max, options } of amenityFields()) {
+    const input = amenities[key];
+    if (!input || (key === 'parkingType' && money(amenities.parking) === 0n)) continue;
+    if (options) {
+      const text = options.find(([value]) => value === input)?.[1];
+      if (text) entries.push([label,text]);
+    } else {
+      const count = money(input);
+      if (count !== null && count <= BigInt(max)) entries.push([label,number(count)]);
+    }
+  }
+  if (typeof amenities.notes === 'string' && amenities.notes.trim()) {
+    entries.push([t('یادداشت ملک','Property notes'),amenities.notes.trim().slice(0,180),true]);
+  }
+  return entries;
+}
+
 function renderCompare() {
   const s = state.compare;
   return card(t('مقایسهٔ پیشنهادهای اجاره','Compare rental offers'), t('برای هر خانه، پول پیش و اجاره را بنویسید. ببینید کدام گزینه در کل قرارداد به‌صرفه‌تر است.', 'Enter the deposit and rent for each home to see which costs less over the lease.'),
@@ -304,6 +372,7 @@ function renderCompare() {
     <div class="scenarios">${s.offers.map((offer,i)=>`<section class="scenario" aria-labelledby="offer-${i}">
       <div class="scenarioHead"><h4 id="offer-${i}">${t('پیشنهاد','Offer')} ${number(i+1)}</h4>${i === 2 ? btn('remove-offer',t('حذف پیشنهاد سوم','Remove third offer')) : ''}</div>
       <div class="stack">${field(`offer-${i}-deposit`,depositLabel(),offer.deposit)}${field(`offer-${i}-rent`,rentLabel(),offer.rent)}${field(`offer-${i}-fee`,t('هزینهٔ یک‌باره','One-time fees'),offer.fee,{help:t('اختیاری، مثل سهم شما از کمیسیون بنگاه.','Optional, such as your share of the agent fee.'),example:i===0?'5000000':'6000000'})}</div>
+      ${offerAmenities(offer,i)}
     </section>`).join('')}</div>`, true) +
     `<article class="card glass wide compareResult resultStage"><div class="stageBar">${step(true,'calc')}</div><div class="compareSectionHead">
       <div class="resultTitle"><h2 id="result-heading" tabindex="-1">${t('نتیجهٔ مقایسه','Comparison result')}</h2></div>
@@ -553,7 +622,7 @@ function compare() {
     const rent = readMoney(`offer-${i}-rent`,offer.rent,true);
     const fee = readMoney(`offer-${i}-fee`,offer.fee,true);
     if (issue || deposit === null || rent === null || fee === null) return null;
-    return { i, deposit, rent, fee, ...scenario(deposit,rent,fee,months,rate) };
+    return { i, deposit, rent, fee, amenities:amenityRows(offer), ...scenario(deposit,rent,fee,months,rate) };
   }).filter(Boolean);
   if (issue || offers.length < 2) return;
   const sorted = [...offers].sort((a,b)=>a.comparable === b.comparable ? 0 : a.comparable < b.comparable ? -1 : 1);
@@ -567,8 +636,13 @@ function compare() {
   const note = t('هزینهٔ نقدی شامل اجارهٔ دوره و هزینهٔ یک‌باره است. هزینهٔ مقایسه‌ای، معادل اجارهٔ مبلغ رهن را هم لحاظ می‌کند. اصل رهن جداگانه نمایش داده شده است.', 'Cash cost includes rent over the term and one-time fees. Comparable cost also includes the rental equivalent of the deposit. Deposit principal is shown separately.');
   show(`<div class="resultMain compareSummary"><div><span>${t('کمترین هزینهٔ مقایسه‌ای','Lowest comparable cost')}</span><strong>${winner}</strong></div><b dir="auto">${amount(cheapest)}</b></div>
     ${row(t('مدت قرارداد','Contract term'), `${number(months)} ${t('ماه','months')}`)}${row(rateLabel(), amount(rate))}
-    <div class="scenarios">${offers.map(offer=>`<article class="scenario ${offer.comparable === cheapest ? 'bestOffer' : ''}"><h3>${offerName(offer.i)}</h3>${row(totalLabel,amount(offer.comparable))}${row(cashLabel,amount(offer.cash))}${row(depositLabel(),amount(offer.deposit))}${row(t('اختلاف با کمترین هزینه','Above lowest cost'),amount(offer.comparable-cheapest))}</article>`).join('')}</div><p class="note">${note}</p>`,
-    [withLabel(t('کمترین هزینهٔ مقایسه‌ای','Lowest comparable cost'),winner),withLabel(t('مدت','Term'),`${number(months)} ${t('ماه','months')}`),withLabel(rateLabel(),amount(rate)),...offers.map(offer=>`${offerName(offer.i)} · ${withLabel(totalLabel,amount(offer.comparable))} · ${withLabel(cashLabel,amount(offer.cash))} · ${withLabel(depositLabel(),amount(offer.deposit))}`),note]);
+    <div class="scenarios">${offers.map(offer=>`<article class="scenario ${offer.comparable === cheapest ? 'bestOffer' : ''}"><h3>${offerName(offer.i)}</h3>${row(totalLabel,amount(offer.comparable))}${row(cashLabel,amount(offer.cash))}${row(depositLabel(),amount(offer.deposit))}${row(t('اختلاف با کمترین هزینه','Above lowest cost'),amount(offer.comparable-cheapest))}
+      ${offer.amenities.length ? `<section class="amenityResult"><h4>${t('مشخصات ملک','Property details')}</h4>
+        ${offer.amenities.map(([label,value,plain])=>row(label,plain ? escape(value) : value)).join('')}
+      </section>` : ''}</article>`).join('')}</div><p class="note">${note}</p>`,
+    [withLabel(t('کمترین هزینهٔ مقایسه‌ای','Lowest comparable cost'),winner),withLabel(t('مدت','Term'),`${number(months)} ${t('ماه','months')}`),withLabel(rateLabel(),amount(rate)),...offers.map(offer=>`${offerName(offer.i)} · ${withLabel(totalLabel,amount(offer.comparable))} · ${withLabel(cashLabel,amount(offer.cash))} · ${withLabel(depositLabel(),amount(offer.deposit))}${
+      offer.amenities.length ? '\n' + offer.amenities.map(([label,value])=>withLabel(label,value)).join('\n') : ''
+    }`),note]);
 }
 function valuation() {
   const s = state.valuation;
@@ -753,9 +827,23 @@ function inputsChanged(input) {
   persist();
   calculate();
 }
+function updateAmenity(input) {
+  const { offer, amenity } = input.dataset;
+  const record = state.compare.offers[Number(offer)];
+  if (!record) return;
+  const values = record.amenities ??= {};
+  if (amenity === 'parking' || amenity === 'age') {
+    input.value = normalize(input.value).replace(/[^0-9]/g,'').slice(0,input.maxLength);
+  }
+  if (input.value !== '') values[amenity] = input.value;
+  else delete values[amenity];
+  persist();
+  calculate();
+}
 $('workspace').addEventListener('input', event => {
   const input = event.target;
   if (event.isComposing) return;
+  if (input.matches('[data-amenity]')) { updateAmenity(input); return; }
   if (input.matches('[data-field]')) inputsChanged(input);
   if (input.id === 'share') {
     state.convert.anchor = 'share';
@@ -765,6 +853,7 @@ $('workspace').addEventListener('input', event => {
   }
 });
 $('workspace').addEventListener('compositionend', event => {
+  if (event.target.matches('[data-amenity]')) { updateAmenity(event.target); return; }
   if (event.target.matches('[data-field]')) inputsChanged(event.target);
 });
 $('workspace').addEventListener('beforeinput', event => {
